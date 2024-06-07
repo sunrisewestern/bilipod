@@ -1,0 +1,32 @@
+[project]
+name = "bilipod"
+version = "0.1.0"
+description = "Make bilibili user or playlist into podcast"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+dependencies = [
+  "bilibili-api-python==16.2.0",
+  "feedgen==1.0.0",
+  "loguru==0.7.2",
+  "PyYAML>=6.0",
+  "requests>=2.27.1",
+  "tinydb==4.8.0",
+]
+classifiers   = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GPL3 License",
+]
+
+authors = [{ name = "X Chen", email = "chenxiaoxime@gmail.com" }]
+
+[project.scripts]
+bilipod = "bilipod:main"
+
+[project.urls]
+homepage = "https://github.com/sunrisewestern/bilipod"
+
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"

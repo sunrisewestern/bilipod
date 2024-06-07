@@ -1,0 +1,90 @@
+---
+# This is an example of yaml configuration file for bilipod.
+
+# Web server related configuration.
+server:
+  # HTTP server port.
+  port: 4443
+
+  # Optional. If you want to hide Podsync behind reverse proxy like nginx, you can use this field.
+  # Server will be accessible from http://{bind_address}:{port}, but episode links will point to this URL {hostname}.
+  hostname: "https://example.com:4443"
+  # Bind a specific IP addresses for server, default is to bind localhost or  
+  bind_address: "0.0.0.0"
+  # Specify path for reverse proxy, default is "/" and only [A-Za-z0-9] is allowed.
+  # path: "test"
+  # Optional. If you want to use TLS, you must set the TLS flag and specify the certificate file and private key file.
+  tls: false
+  certificate_path: ""
+  key_file_path: ""
+
+
+# Configure where to store the episode data
+storage:
+  # Could be "local" (default) for the local file system
+  type: local
+  storage.local:
+    data_dir: /app/data # Don't change if you run podsync via docker
+
+token:
+  # This is the token used to authenticate with the bilibili API
+  # refer to https://nemo2011.github.io/bilibili-api/#/get-credential for more details
+  bili_jct:
+  buvid3:
+  dedeuserid:
+  sessdata:
+  ac_time_value: # optional
+
+feeds:
+  feed.1:
+    # user_id (uid) or playlist_id (sid):
+    uid: 23947287
+    # sid: 1733148
+
+    # The number of episodes to query each update (keep in mind, that this might cause IP ban), default 10
+    page_size: 5
+
+    # How often query for updates, examples: "60m", "4h", "2h45m", default "12h"
+    update_period: 1m
+
+    format: audio # "audio" or "video", default "audio"
+
+    playlist_sort: "desc" #  which will fetch playlist items from the end, only support "desc" now
+
+    quality: low # or median , or high, default "low"
+
+    # Optionally include this feed in OPML file (default value: true)
+    opml: True
+
+    # Whether to cleanup old episodes.Default keep last 10 episodes if true. (order desc by PubDate)
+    keep_last: 10 # the number of episodes to keep or "None" to keep all , default 10
+
+    # Optional keywords
+    keyword: # Name match to serch for. If set, then only download matching episodes. e.g. "硬核狠人"
+
+    # When set to true, podcasts indexers such as iTunes or Google Podcasts will not index this podcast, default true
+    private_feed: True
+
+    # if auto like the video, default False 
+    like: False
+
+    # Optional feed customizations
+    title: # "小约翰可汗-硬核狠人"
+    description: # "等待鸽多"
+    author: # "小约翰可汗"
+    cover_art: # "{IMAGE_URL}"
+    category: # "TV"
+    subcategories: # "Documentary", "Tech News"
+    explicit: # no
+    lang: # "en"
+    # optional: this will override the default link (usually the URL address) in the generated RSS feed with another link
+    link: # "https://example.org"
+
+
+# Optional log config. If not specified logs to the stdout
+log:
+  filename : "bilipod.log"
+  max_size : 50 # MB
+  max_age : 30 # days
+  compress : true
+  debug : false
