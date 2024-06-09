@@ -12,7 +12,7 @@ from utils.biliuser import get_episode_list, get_pod_info
 from utils.bp_log import Logger
 from utils.config_parser import BiliPodConfig
 
-from .clean import clean_untracked_episodes, clean_unused_rss
+from .clean import clean_episodes, clean_untracked_episodes, clean_unused_rss
 
 logger = Logger().get_logger()
 
@@ -81,3 +81,4 @@ async def data_initialize(
 
     clean_unused_rss(pod_tbl, config.storage.data_dir)
     clean_untracked_episodes(pod_tbl, episode_tbl)
+    clean_episodes(episode_tbl, config.storage.data_dir)

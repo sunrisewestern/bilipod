@@ -116,7 +116,7 @@ class Episode:
         if self.location is not None and self.location.exists():
             self.location.unlink()
         else:
-            raise FileNotFoundError(f"Location {self.location} does not exist.")
+            raise FileNotFoundError(f"File {self.location} does not exist.")
 
     def expand_description(self, text: str):
         self.description = f"{self.description}\n{text}"
