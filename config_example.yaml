@@ -36,7 +36,7 @@ token:
   ac_time_value: # optional
 
 feeds:
-  feed.1:
+  xiaoyuehankehan:
     # user_id (uid) or playlist_id (sid):
     uid: 23947287
     # sid: 1733148
