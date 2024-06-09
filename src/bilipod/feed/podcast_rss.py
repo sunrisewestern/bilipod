@@ -49,14 +49,19 @@ def generate_feed_xml(
     fg.podcast.itunes_category(pod.category, pod.subcategories)
     fg.podcast.itunes_author(pod.author)
 
-    matches = [
-        episode_tbl.search(query_episode(episode_info))[0]
-        for episode_info in get_episode_list(pod)
-    ]
-    episodes = (Episode.from_dict(episode) for episode in matches)
+    matched_episodes: list[Episode] = []
+    for episode in get_episode_list(pod):
+        matches = episode_tbl.search(query_episode(episode))
+        if not matches:
+            logger.warning(f"Episode {episode.bvid} in pod {pod.feed_id} not found")
+            continue
+        else:
+            full_episode = Episode.from_dict(matches[0])
+            matched_episodes.append(full_episode)
 
-    for episode in episodes:
+    for episode in matched_episodes:
         if not episode.exists():
+            logger.warning(f"Episode {episode.bvid} is not downloaded")
             continue
 
         pubdate = convert_timestamp_to_localtime(episode.pubdate)
@@ -72,7 +77,7 @@ def generate_feed_xml(
         fe.podcast.itunes_image(episode.image)
         fe.podcast.itunes_explicit(episode.explicit)
 
-    feed_name = f"{pod.feed_id.replace('feed.','',1)}"
+    feed_name = f"{pod.feed_id.replace('feed.', '', 1)}"
 
     # Remove old feed if exists
     # str(pod.data_dir / f"{feed_name}.xml").unlink(missing_ok=True)

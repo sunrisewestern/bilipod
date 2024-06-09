@@ -1,11 +1,12 @@
 import asyncio
 import threading
 import time
+from typing import List
 
 from bilibili_api import Credential
 from tinydb import Query, table
 
-from bp_class import Pod
+from bp_class import Episode, Pod
 from downloader import download_episodes
 from feed import generate_feed_xml, generate_opml  # noqa: F401
 from utils.biliuser import get_episode_list, get_pod_info
@@ -59,14 +60,14 @@ async def update_episodes(
         updated_pods = [
             Pod(**pod_info)
             for pod_info in pod_tbl.search(
-                Query().updated_at >= time.time() - max_delay
+                Query().updated_at >= (time.time() - (max_delay + 10))
             )
         ]
 
         # gather the episode list to download
-        episode_to_update = []
+        episode_to_update: List[Episode] = []
         for pod in updated_pods:
-            episode_list = get_episode_list(pod)
+            episode_list: List[Episode] = get_episode_list(pod)
             for episode in episode_list:
                 if episode_tbl.search(query_episode(episode)):
                     continue
@@ -74,12 +75,13 @@ async def update_episodes(
                     episode_to_update.append(episode)
 
         if episode_to_update:
+            episode_to_update = list(set(episode_to_update))
             logger.debug(f"Episodes to update: {episode_to_update}")
             await download_episodes(episode_to_update, credential=credential)
 
             # update episode list in episode_tbl
             episode_tbl.insert_multiple(
-                [episode.to_dict() for episode in set(episode_list)]
+                [episode.to_dict() for episode in episode_to_update]
             )
 
             # update feed xml
