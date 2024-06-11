@@ -58,20 +58,23 @@ async def update_episodes(
 
         # Fetch updated pods from pod_tbl
         updated_pods = [
-            Pod(**pod_info)
+            Pod.from_dict(pod_info)
             for pod_info in pod_tbl.search(
-                Query().updated_at >= (time.time() - (max_delay + 10))
+                Query().update_at >= (time.time() - (max_delay + 10))
             )
         ]
+
+        if not updated_pods:
+            logger.debug("No feed to update.")
+            continue
 
         # gather the episode list to download
         episode_to_update: List[Episode] = []
         for pod in updated_pods:
             episode_list: List[Episode] = get_episode_list(pod)
             for episode in episode_list:
-                if episode_tbl.search(query_episode(episode)):
-                    continue
-                else:
+                logger.debug(f"{pod.feed_id} has {len(episode_list)} episodes.")
+                if not episode_tbl.search(query_episode(episode)):
                     episode_to_update.append(episode)
 
         if episode_to_update:
