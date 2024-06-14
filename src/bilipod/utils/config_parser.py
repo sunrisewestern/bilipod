@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Dict, Optional, Sequence
+from typing import Dict, Literal, Optional, Sequence, Union
 
 import yaml
 
@@ -43,7 +43,7 @@ class FeedConfig:
     opml: bool = True
     keep_last: int = 10
     private_feed: bool = False
-    like: bool = False
+    endorse: Union[Literal["triple"], Sequence[str], None] = None
     keyword: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None

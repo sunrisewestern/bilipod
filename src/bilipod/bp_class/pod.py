@@ -61,7 +61,7 @@ class Pod:
     opml: Optional[bool] = None
     keep_last: int = 10
     private_feed: bool = True
-    like: bool = False
+    endorse: Union[Literal["triple"], Sequence[str], None] = None
     keyword: Optional[str] = None
     episodes: Sequence[dict] = None
     xml_url: Optional[str] = field(init=False)
@@ -79,7 +79,7 @@ class Pod:
 
     def __post_init__(self):
         if self.base_url is not None:
-            self.xml_url = f"{self.base_url}/{self.feed_id.replace('feed.','',1)}.xml"
+            self.xml_url = f"{self.base_url}/{self.feed_id.replace('feed.', '', 1)}.xml"
         if self.data_dir is not None:
             self.data_dir = Path(self.data_dir)
 
@@ -90,4 +90,3 @@ class Pod:
     def update(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-

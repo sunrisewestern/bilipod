@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Sequence, Union
 
 
 @dataclass
@@ -36,6 +36,7 @@ class Episode:
     duration: Optional[str] = None
     pubdate: Optional[str] = None
     explicit: Literal["yes", "no"] = "no"
+    endorse: Union[Literal["triple"], Sequence[str], None] = None
 
     format: Literal["audio", "video"] = None
     type: Literal["audio/mpeg", "video/mp4"] = None

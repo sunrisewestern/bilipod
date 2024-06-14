@@ -44,11 +44,11 @@ async def download_url(url: str, out: Path, info: str):
 
 
 async def video_downloader(
-    bvid: int,
+    name: str,
+    video_obj: video.Video,
     outfile: Union[str, Path],
     credential: Union[Credential, None] = None,
-    format: Literal["video", "audio", "custom"] = "audio",
-    custom_format: dict = None,
+    format: Literal["video", "audio"] = "audio",
     video_quality: Literal[
         "360P",
         "480P",
@@ -62,39 +62,36 @@ async def video_downloader(
         "8K",
     ] = "1080P",
     audio_quality: Literal["64K", "132K", "192K", "HI_RES", "DOLBY"] = "192K",
-) -> dict:
+) -> None:
     """
     Get video download url
 
     Args:
-        bvid     (int, mandatory)      : bvid
+        name (str) : video name
+
+        video_obj (video.Video) : video object
+
+        outfile (Union[str, Path]) : output file path
 
         credential (Credential, optional) : user credential. Defaults to None.
 
-        format (Literal["video", "audio", "custom"], optional) : download format. Defaults to "audio".
+        video_quality (Literal["360P", "480P", "720P", "1080P", "1080P_PLUS", "1080P_60", "4K", "HDR", "DOLBY", "8K"], optional) : video quality. Defaults to "1080P".
 
-        custom_format (dict, optional) : custom format. Defaults to None.
+        audio_quality (Literal["64K", "132K", "192K", "HI_RES", "DOLBY"], optional) : audio quality. Defaults to "192K".
 
-        video_max_quality (Literal["360P", "480P", "720P", "1080P", "1080P_PLUS", "1080P_60", "4K", "HDR", "DOLBY", "8K"], optional) : video max quality. Defaults to "1080P".
-
-        audio_max_quality (Literal["64K", "132K", "192K", "HI_RES", "DOLBY"], optional) : audio max quality. Defaults to "192K".
+        format (Literal["video", "audio"], optional) : download format. Defaults to "audio".
     """
-    if format not in ["video", "audio", "custom"]:
-        raise ValueError("format must be 'video', 'audio', or 'custom'")
-
-    if format == "custom" and custom_format is None:  # not supported yet
-        raise ValueError("custom_format must not be None")
+    if format not in ["video", "audio"]:
+        raise ValueError("format must be 'video', 'audio'")
 
     tempdir = tempfile.TemporaryDirectory()
 
     tempdir_path = Path(tempdir.name)
 
     try:
-        video_obj = video.Video(bvid=bvid, credential=credential)
         v_url_data = await video_obj.get_download_url(0)
-        v_info = await video_obj.get_info()
     except ResponseCodeException:
-        logger.debug(f"Failed to get video {bvid}, skipping.")
+        logger.debug(f"Failed to get video {name}, skipping.")
         return None
 
     v_detecter = video.VideoDownloadURLDataDetecter(v_url_data)
@@ -107,12 +104,11 @@ async def video_downloader(
     outfile = Path(outfile)
     if outfile.exists():
         logger.debug(f"File {outfile} already exists, skipping.")
-        return v_info
 
     # flv stream
     if v_detecter.check_flv_stream() is True:
-        temp_flv = tempdir_path / f"{bvid}_flv_temp.flv"
-        await download_url(streams[0].url, temp_flv, f"{bvid} FLV stream")
+        temp_flv = tempdir_path / f"{name}_flv_temp.flv"
+        await download_url(streams[0].url, temp_flv, f"{name} FLV stream")
         if format == "video":
             run(
                 args=[
@@ -144,11 +140,11 @@ async def video_downloader(
             pass
     else:
         # mp4 stream
-        temp_audio = tempdir_path / f"{bvid}_audio_temp.m4s"
-        temp_video = tempdir_path / f"{bvid}_video_temp.m4s"
+        temp_audio = tempdir_path / f"{name}_audio_temp.m4s"
+        temp_video = tempdir_path / f"{name}_video_temp.m4s"
         if format == "video":
-            await download_url(streams[0].url, temp_video, f"{bvid} Video stream")
-            await download_url(streams[1].url, temp_audio, f"{bvid} Audio stream")
+            await download_url(streams[0].url, temp_video, f"{name} Video stream")
+            await download_url(streams[1].url, temp_audio, f"{name} Audio stream")
             # merge
             run(
                 args=[
@@ -166,7 +162,7 @@ async def video_downloader(
                 ]
             )
         elif format == "audio":
-            await download_url(streams[1].url, temp_audio, f"{bvid} Audio stream")
+            await download_url(streams[1].url, temp_audio, f"{name} Audio stream")
 
             run(
                 args=[
@@ -184,5 +180,3 @@ async def video_downloader(
             pass
 
     tempdir.cleanup()
-
-    return v_info

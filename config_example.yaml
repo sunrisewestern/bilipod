@@ -65,8 +65,8 @@ feeds:
     # When set to true, podcasts indexers such as iTunes or Google Podcasts will not index this podcast, default true
     private_feed: True
 
-    # if auto like the video, default False 
-    like: False
+    # Option to endorse the video, default None, or list of ['like','coin|{number(1 or 2)}','favorite|{media_id}'], or “triple”, for media_id, refer to https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/fav/info.md
+    endorse: # ['like','coin|2','favorite|{media_id}']
 
     # Optional feed customizations
     title: # "小约翰可汗-硬核狠人"

@@ -1,12 +1,13 @@
 import asyncio
 from typing import List, Optional, Sequence
 
-from bilibili_api import Credential
+from bilibili_api import Credential, ResponseCodeException, video
 
 from bp_class import Episode
 from downloader.video_downloader import video_downloader
 from exceptions.DownloadError import DownloadError
 from utils.bp_log import Logger
+from utils.endorse import endorse
 
 logger = Logger().get_logger()
 
@@ -18,17 +19,34 @@ async def download_episode(
     Download an episode and update info of the episode object
     """
     try:
-        v_info = await video_downloader(
-            bvid=episode.bvid,
-            outfile=episode.location,
-            format=episode.format,
-            video_quality=episode.video_quality,
-            audio_quality=episode.audio_quality,
-            credential=credential,
-        )
-    except DownloadError as e:
-        logger.debug(f"Attempt to download {episode.bvid} failed: {e}")
+        v_obj = video.Video(episode.bvid, credential=credential)
+        v_info = await v_obj.get_info()
+    except ResponseCodeException as e:
+        logger.error(f"Failed to download {episode.bvid}: {e}")
         return episode
+
+    if episode.exists():
+        logger.debug(f"Episode {episode.bvid} already exists.")
+    else:
+        try:
+            await video_downloader(
+                name=episode.bvid,
+                video_obj=v_obj,
+                outfile=episode.location,
+                format=episode.format,
+                video_quality=episode.video_quality,
+                audio_quality=episode.audio_quality,
+                credential=credential,
+            )
+            
+            try:
+                await endorse(episode.endorse, v_obj, credential)
+            except Exception as e:
+                logger.error(f"Failed to endorse {episode.bvid}: {e}")
+            
+        except DownloadError as e:
+            logger.debug(f"Attempt to download {episode.bvid} failed: {e}")
+            return episode
 
     episode.status = "downloaded"  # Update status on successful download
     episode.set_size()
