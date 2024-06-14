@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from bilibili_api import Credential, user
 from bilibili_api.exceptions import ResponseCodeException
@@ -9,11 +9,18 @@ from utils.bp_log import Logger
 logger = Logger().get_logger()
 
 
+def s2ms(seconds):
+    # seconds_to_minute_second
+    minutes = seconds // 60
+    remaining_seconds = seconds % 60
+    return f"{minutes}:{remaining_seconds:02}"
+
+
 async def get_pod_info(
     uid: int,
     page_number: int = 1,
     page_size: int = 5,
-    keyword: str = "",
+    keyword: Optional[str] = None,
     playlist_sort: Literal["desc", "asc"] = "desc",
     credential: Credential = None,
 ) -> dict:
@@ -26,21 +33,40 @@ async def get_pod_info(
     info = await user_obj.get_user_info()
     # logger.debug(info)
 
-    v_list = await user_obj.get_videos(
-        pn=page_number, ps=page_size, keyword=keyword, order=user.VideoOrder.PUBDATE
-    )
+    if keyword:
+        video_list = await user_obj.get_videos(
+            pn=page_number, ps=page_size, keyword=keyword, order=user.VideoOrder.PUBDATE
+        )
+        v_list = video_list["list"]["vlist"]
+        episodes_info = [
+            {
+                "bvid": v["bvid"],
+                "title": v["title"],
+                "description": v["description"],
+                "duration": v["length"],
+                "image": v["pic"],
+                "pubdate": v["created"],
+            }
+            for v in v_list
+        ]
 
-    episodes_info = [
-        {
-            "bvid": v["bvid"],
-            "title": v["title"],
-            "description": v["description"],
-            "duration": v["length"],
-            "image": v["pic"],
-            "pubdate": v["created"],
-        }
-        for v in v_list["list"]["vlist"]
-    ]
+    else:
+        media_list = await user_obj.get_media_list(
+            ps=page_size, desc={"desc": True, "asc": False}[playlist_sort]
+        )
+        v_list = media_list["media_list"]
+
+        episodes_info = [
+            {
+                "bvid": v["bv_id"],
+                "title": v["title"],
+                "description": v["intro"],
+                "duration": s2ms(v["duration"]),
+                "image": v["cover"],
+                "pubdate": v["pubtime"],
+            }
+            for v in v_list
+        ]
 
     return {
         "uid": uid,
@@ -61,6 +87,7 @@ def get_episode_list(pod: Pod) -> List[Episode]:
             quality=pod.quality,
             data_dir=pod.data_dir,
             base_url=pod.base_url,
+            endorse=pod.endorse,
         )
         for episodes_info in pod.episodes
     ]
