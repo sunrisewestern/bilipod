@@ -103,6 +103,7 @@ async def main(config: BiliPodConfig, db_path: Path):
             credential=credential,
         )
 
+    # update token every 6 hours
     schedule_job(update_interval='6h', job=update_credential, credential=credential)
 
     run_scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
