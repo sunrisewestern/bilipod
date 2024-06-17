@@ -1,5 +1,4 @@
 import asyncio
-import threading
 import time
 
 from bilibili_api import Credential
@@ -15,12 +14,6 @@ from utils.config_parser import BiliPodConfig
 from .clean import clean_episodes, clean_untracked_episodes, clean_unused_rss
 
 logger = Logger().get_logger()
-
-update_interval = 1 * 60
-max_delay = 5 * 60
-episode_tbl_lock = threading.Lock()
-
-update_event = asyncio.Event()
 
 
 async def data_initialize(

@@ -73,7 +73,6 @@ async def update_episodes(
         for pod in updated_pods:
             episode_list: List[Episode] = get_episode_list(pod)
             for episode in episode_list:
-                logger.debug(f"{pod.feed_id} has {len(episode_list)} episodes.")
                 if not episode_tbl.search(query_episode(episode)):
                     episode_to_update.append(episode)
 
