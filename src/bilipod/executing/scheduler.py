@@ -14,7 +14,7 @@ def schedule_job(update_interval, job=None, *args, **kwargs):
 
     Args:
         update_interval (str): The update interval string. Can be in formats:
-            - "60m", "4h", "2h45m" for durations
+            - "1d", "1d2h", "60m", "4h", "2h45m" for durations
             - "12:00" for a specific time of day (24h format)
             - Defaults to "12h"
     """

@@ -17,12 +17,12 @@ from .clean import clean_untracked_episodes
 
 logger = Logger().get_logger()
 
-max_delay = 5 * 60
+MAX_DELAY = 5 * 60
 episode_tbl_lock = threading.Lock()
 update_event = asyncio.Event()
 
 
-async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential):
+async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> None:
     updated_pod_info = await get_pod_info(
         uid=pod.uid,
         credential=credential,
@@ -45,13 +45,13 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential):
 
 async def update_episodes(
     pod_tbl: table.Table, episode_tbl: table.Table, credential: Credential
-):
+) -> None:
     while True:
         logger.debug("Waiting for update signal...")
         await update_event.wait()
         logger.debug("Update signal received.")
 
-        await asyncio.sleep(max_delay)
+        await asyncio.sleep(MAX_DELAY)
 
         update_event.clear()
         logger.debug("Event cleared, fetching updated podcasts.")
@@ -60,7 +60,7 @@ async def update_episodes(
         updated_pods = [
             Pod.from_dict(pod_info)
             for pod_info in pod_tbl.search(
-                Query().update_at >= (time.time() - (max_delay + 10))
+                Query().update_at >= (time.time() - (MAX_DELAY + 10))
             )
         ]
 

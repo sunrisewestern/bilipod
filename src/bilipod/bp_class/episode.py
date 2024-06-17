@@ -6,24 +6,30 @@ from typing import Literal, Optional, Sequence, Union
 @dataclass
 class Episode:
     """
-    Class representing an episode of a video.
+    Class representing an episode of a video or audio podcast.
 
     Attributes:
-        bvid (str): Bilibili video ID.
-        url (Optional[str]): URL to access the episode.
-        link (Optional[str]): Link of the original media.
-        title (Optional[str]): Title of the episode.
-        description (Optional[str]): Description of the episode.
-        image (Optional[str]): Image URL of the episode.
-        duration (Optional[str]): Duration of the episode.
-        pubdate (Optional[str]): Publication date of the episode.
-        explicit (Literal["yes", "no"]): Indicates if the episode is explicit.
-        format (Literal["audio", "video"]): Format of the episode.
-        quality (Optional[Literal["low", "medium", "high"]]): Quality of the episode.
-        data_dir (Optional[Path]): Data directory.
-        location (Optional[Path]): Location of the episode.
-        size (Optional[int]): Size of the episode in bytes.
-        status (str): Status of the episode, downloaded,to_download, to_delete, deleted, default is to_download.
+        bvid: Bilibili video ID.
+        base_url: Base URL for constructing the episode URL.
+        url: URL to access the episode. Automatically generated based on other attributes.
+        link: Link of the original media on the Bilibili platform.
+        title: Title of the episode.
+        description: Description of the episode.
+        image: Image URL of the episode.
+        duration: Duration of the episode.
+        pubdate: Publication date of the episode.
+        explicit: Indicates if the episode is explicit.
+        endorse: Endorsement information, could be 'triple' or a sequence of strings.
+        format: Format of the episode, either 'audio' or 'video'.
+        type: MIME type of the episode, automatically determined from the 'format'.
+        quality: Quality of the episode ('low', 'medium', 'high').
+        video_quality: Specific video quality ('360P', '720P', '4K'), derived from 'quality'.
+        audio_quality: Specific audio quality ('64K', '132K', '192K'), derived from 'quality'.
+        data_dir: Root data directory where the episode is stored.
+        location: Full file path to the episode. Automatically generated.
+        size: Size of the episode in bytes.
+        status: Download status of the episode ('downloaded', 'deleted', or None).
+        tracking: Flag to indicate if the episode is being tracked for download/management.
     """
 
     bvid: str
