@@ -5,37 +5,36 @@ from typing import Literal, Optional, Sequence, Union
 
 @dataclass
 class Pod:
-    """
-    Class representing a video podcast.
+    """Represents a video or audio podcast.
 
     Attributes:
-        feed_id (str): Unique identifier for the podcast.
-        update_at (float): Unix timestamp representing when the podcast was last updated.
-        data_dir (Union[Path, str, None]): The directory where the podcast's data is stored.
-        base_url (Optional[str]): The base URL of the podcast.
-        uid (Optional[int]): The user ID of the creator of the podcast.
-        sid (Optional[int]): The series ID of the podcast.
-        title (Optional[str]): Title of the podcast.
-        description (Optional[str]): Description of the podcast.
-        cover_art (Optional[str]): URL of the cover art of the podcast.
-        author (Optional[str]): The author of the podcast.
-        link (Optional[str]): Link of the original media.
-        category (Optional[str]): Category of the podcast.
-        subcategories (Optional[Sequence[str]]): Subcategories of the podcast.
-        explicit (Optional[Literal["yes", "no"]]): Indicates if the podcast is explicit.
-        lang (Optional[str]): Language of the podcast.
-        page_size (int): The number of episodes per page.
-        update_period (str): The period of time between updates of the podcast.
-        format (Literal["audio", "video"]): The format of the podcast.
-        playlist_sort (Literal["asc", "desc"]): The sorting order of the podcast.
-        quality (Literal["low", "high"]): The quality of the podcast.
-        opml (bool): Indicates if the podcast is an OPML podcast.
-        keep_last (int): The number of episodes to keep in the podcast.
-        private_feed (bool): Indicates if the podcast is a private feed.
-        like (bool): Indicates if the user likes the podcast.
-        keyword (Optional[str]): The keyword of the podcast.
-        episodes (dict): A dictionary mapping episode IDs to Episode objects.
-        xml_url (Optional[Path]): The URL of the podcast's XML file.
+        feed_id: Unique identifier for the podcast.
+        update_at: Unix timestamp representing the last update time.
+        data_dir: Directory where podcast data is stored.
+        base_url: Base URL of the podcast.
+        uid: User ID of the podcast creator.
+        sid: Series ID of the podcast.
+        title: Title of the podcast.
+        description: Description of the podcast.
+        cover_art: URL of the cover art.
+        author: Author of the podcast.
+        link: Link to the original media source.
+        category: Category of the podcast.
+        subcategories: Subcategories of the podcast.
+        explicit: Whether the podcast is explicit ('yes' or 'no').
+        lang: Language of the podcast.
+        page_size: Number of episodes per page.
+        update_period: Frequency of podcast updates (e.g., '12h').
+        format: Format of the podcast ('audio' or 'video').
+        playlist_sort: Sorting order of the playlist ('asc' or 'desc').
+        quality: Quality of the podcast ('low' or 'high').
+        opml: Whether the podcast is an OPML podcast.
+        keep_last: Number of episodes to keep.
+        private_feed: Whether the podcast is a private feed.
+        endorse: Endorsement information ('triple' or a list of strings).
+        keyword: Keyword associated with the podcast.
+        episodes: List of episode dictionaries (each representing an Episode object).
+        xml_url: URL of the podcast's XML file (automatically generated).
     """
 
     feed_id: str

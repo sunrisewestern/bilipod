@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 from pathlib import Path
 from subprocess import run
@@ -138,6 +139,28 @@ async def video_downloader(
             )
         else:
             pass
+    elif (
+        v_detecter.check_html5_mp4_stream() is True
+        or v_detecter.check_episode_try_mp4_stream() is True
+    ):
+        temp_mp4 = tempdir_path / f"{name}_mp4_temp.mp4"
+        await download_url(streams[0].url, temp_mp4, f"{name} HTML5 MP4 stream")
+        if format == "video":
+            # copy temp_mp4 to outfile
+            shutil.copy(temp_mp4, outfile)
+        elif format == "audio":
+            run(
+                args=[
+                    FFMPEG_PATH,
+                    "-y",
+                    "-i",
+                    temp_mp4,
+                    "-vn",
+                    "-acodec",
+                    "copy",
+                    outfile,
+                ]
+            )
     else:
         # mp4 stream
         temp_audio = tempdir_path / f"{name}_audio_temp.m4s"

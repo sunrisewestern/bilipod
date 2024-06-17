@@ -1,3 +1,1 @@
-1. enable listing paided source
-2. auto like function
-3. custom format besides vedio and audio
+1. allow custumized format, e.g. audio:192K:HI_RES, video:4K:HDR
