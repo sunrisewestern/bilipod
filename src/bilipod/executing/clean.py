@@ -10,7 +10,7 @@ from utils.db_query import query_episode
 logger = Logger().get_logger()
 
 
-def clean_episodes(episode_tbl: table.Table, data_dir: Path):
+def clean_unused_episodes(episode_tbl: table.Table, data_dir: Path):
     media_dir = Path(data_dir) / "media"
     for media in media_dir.iterdir():
         if media.is_file():
@@ -24,20 +24,21 @@ def clean_untracked_episodes(
     pod_tbl: table.Table,
     episode_tbl: table.Table,
 ):
-    episode_tbl.update({"on_track": False})
+    episode_tbl.update({"tracking": False})
     for pod_info in pod_tbl.all():
         pod = Pod.from_dict(pod_info)
         for episode in get_episode_list(pod):
-            episode_tbl.update({"on_track": True}, query_episode(episode))
+            episode_tbl.update({"tracking": True}, query_episode(episode))
 
-    for episode_info in episode_tbl.search(Query().on_track == False):  # noqa E712
+    for episode_info in episode_tbl.search(Query().tracking == False):  # noqa E712
         episode = Episode.from_dict(episode_info)
         try:
             episode.clean()
             episode_tbl.update({"status": "deleted"}, query_episode(episode))
         except FileNotFoundError as e:
-            logger.error(e)
+            logger.debug(f"{episode.location} not found", e)
             episode_tbl.update({"status": "deleted"}, query_episode(episode))
+
     logger.debug("Cleaned untracked episodes.")
 
 

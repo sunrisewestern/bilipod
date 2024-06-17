@@ -92,6 +92,5 @@ async def update_episodes(
                 logger.info(f"Feed {pod.feed_id} updated.")
 
             clean_untracked_episodes(pod_tbl, episode_tbl)
-
         else:
             logger.info("No episodes to update.")

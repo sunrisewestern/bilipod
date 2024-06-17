@@ -46,10 +46,8 @@ class Episode:
     data_dir: Union[Path, str, None] = None
     location: Union[Path, str, None] = field(default=None, repr=False, init=False)
     size: Optional[int] = field(default=None, repr=False, init=False)
-    status: Literal["downloaded", "to_be_deleted", "deleted"] = (
-        "to_be_downloaded"
-    )
-    on_track: bool = True
+    status: Optional[Literal["downloaded", "deleted"]] = None
+    tracking: bool = True
 
     @classmethod
     def from_dict(cls, data: dict):
