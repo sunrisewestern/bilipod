@@ -1,6 +1,6 @@
 # bilipod: Turn Bilibili Users into Podcast Feeds
 
-**Easily convert Bilibili user uploads into podcast feeds you can listen to anywhere!**
+**Easily convert Bilibili user uploads into podcast feeds**
 
 [![GitHub release](https://img.shields.io/github/v/release/sunrisewestern/bilipod)](https://github.com/sunrisewestern/bilipod/releases)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -15,7 +15,8 @@
     - Customize feed metadata (artwork, category, language, etc.).
 - **OPML export** for easy importing into podcast apps.
 - **Episode cleanup** to keep your feed tidy (keep last X episodes).
-- **Docker support** for simplified deployment (coming soon!).
+- **Docker support** for simplified deployment (under development).
+- **Endorse the uploader** (like, coins, favorite; 点赞|投币|收藏|三连)
 
 ## Getting Started
 
@@ -55,7 +56,7 @@
    python ./src/bilipod/main.py --config config.yaml --db data.db
    ```
 
-7. **Subscribe to the generated feed URL** in your favorite podcast app!
+7. **Subscribe to the generated feed URL** in any podcast app
 
 ## Docker
 
