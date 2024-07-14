@@ -41,7 +41,7 @@
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
 
 4. **Obtain your Bilibili cookies:**
@@ -53,7 +53,7 @@
 
 6. **Create your podcast feed:**
    ```bash
-   python ./src/bilipod/main.py --config config.yaml --db data.db
+   bilipod --config config.yaml --db data.db
    ```
 
 7. **Subscribe to the generated feed URL** in any podcast app
@@ -117,9 +117,6 @@ services:
    docker-compose down
    ```
 
-### Summary
-
-By following these steps, you can easily run the `bilipod` application using Docker. With the image available on Docker Hub, you can quickly deploy the application without needing to build the image yourself. Enjoy converting Bilibili user uploads into podcast feeds with ease!
 
 ## Documentation
 
