@@ -5,7 +5,7 @@ services:
     image: sunrisewestern/bilipod:latest
     container_name: bilipod
     ports:
-      - "7001:5728"
+      - "5728:5728"
     volumes:
       - ./config_docker.yaml:/app/config.yaml
       - ./data:/app/data
