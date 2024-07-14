@@ -1,1 +1,2 @@
 1. allow custumized format, e.g. audio:192K:HI_RES, video:4K:HDR
+2. improve asynchronous implementation
