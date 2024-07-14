@@ -1,5 +1,7 @@
 # bilipod: Turn Bilibili Users into Podcast Feeds
 
+English / [简体中文](./README_CN.md)
+
 **Easily convert Bilibili user uploads into podcast feeds**
 
 [![GitHub release](https://img.shields.io/github/v/release/sunrisewestern/bilipod)](https://github.com/sunrisewestern/bilipod/releases)
