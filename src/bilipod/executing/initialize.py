@@ -4,13 +4,12 @@ import time
 from bilibili_api import Credential
 from tinydb import table
 
-from bp_class import Pod
-from downloader import download_episodes
-from feed import generate_feed_xml, generate_opml
-from utils.biliuser import get_episode_list, get_pod_info
-from utils.bp_log import Logger
-from utils.config_parser import BiliPodConfig
-
+from ..bp_class import Pod
+from ..downloader import download_episodes
+from ..feed import generate_feed_xml, generate_opml
+from ..utils.biliuser import get_episode_list, get_pod_info
+from ..utils.bp_log import Logger
+from ..utils.config_parser import BiliPodConfig
 from .clean import clean_unused_episodes, clean_unused_rss
 
 logger = Logger().get_logger()

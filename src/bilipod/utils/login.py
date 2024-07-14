@@ -2,8 +2,7 @@ import sys
 
 from bilibili_api import Credential, ResponseCodeException, login, user
 
-from utils.bp_log import Logger
-
+from .bp_log import Logger
 from .config_parser import BiliPodConfig
 
 logger = Logger().get_logger()

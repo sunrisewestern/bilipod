@@ -7,8 +7,8 @@ from typing import Literal, Union
 import httpx
 from bilibili_api import HEADERS, Credential, ResponseCodeException, video
 
-from exceptions.DownloadError import DownloadError
-from utils.bp_log import Logger
+from ..exceptions.DownloadError import DownloadError
+from ..utils.bp_log import Logger
 
 FFMPEG_PATH = "ffmpeg"
 

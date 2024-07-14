@@ -2,7 +2,7 @@ from xml.etree import ElementTree as ET
 
 from tinydb import table
 
-from bp_class import Pod
+from ..bp_class import Pod
 
 
 def generate_opml(pod_tbl: table.Table, filename) -> str:

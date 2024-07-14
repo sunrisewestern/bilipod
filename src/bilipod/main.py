@@ -9,17 +9,17 @@ from pathlib import Path
 import schedule
 from tinydb import TinyDB
 
-from bp_class import Pod
-from executing import (
+from .bp_class import Pod
+from .executing import (
     data_initialize,
     run_web_server,
     schedule_job,
     update_episodes,
     update_pod,
 )
-from utils.bp_log import Logger
-from utils.config_parser import BiliPodConfig
-from utils.login import get_credential, update_credential
+from .utils.bp_log import Logger
+from .utils.config_parser import BiliPodConfig
+from .utils.login import get_credential, update_credential
 
 BANNER = r"""
 .______    __   __       __  .______     ______    _______
@@ -46,19 +46,24 @@ def run_scheduler():
         time.sleep(1)
 
 
-async def main(config: BiliPodConfig, db_path: Path):
+async def run_service(config: BiliPodConfig, db_path: str):
+
     logger = Logger().get_logger()
+
+    # lode and check credential
     credential = await get_credential(config=config)
 
     logger.info(BANNER)
     logger.info("Start initializing...")
 
     # init db
-    if not db_path.parent.exists():
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-    else:
+    db_path = Path(db_path)
+    if db_path.parent.exists():
+        # backup old db
         shutil.copyfile(db_path, db_path.with_suffix(".bak"))
         db_path.unlink()
+    else:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
 
     db = TinyDB(db_path)
     pod_tbl = db.table("pod")
@@ -104,7 +109,7 @@ async def main(config: BiliPodConfig, db_path: Path):
         )
 
     # update token every 6 hours
-    schedule_job(update_interval='6h', job=update_credential, credential=credential)
+    schedule_job(update_interval="6h", job=update_credential, credential=credential)
 
     run_scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     run_scheduler_thread.start()
@@ -120,23 +125,18 @@ async def main(config: BiliPodConfig, db_path: Path):
         stop_event.set()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
-        description="Process the BiliPod configuration file."
+        description="Long-running service to process data."
     )
     parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to the configuration file.",
+        "--config", type=str, required=True, help="Path to the configuration file."
     )
     parser.add_argument(
-        "--db",
-        type=str,
-        required=True,
-        help="Path to the database file.",
+        "--db", type=str, required=True, help="Path to the database file."
     )
     args = parser.parse_args()
+
     try:
         config = BiliPodConfig.from_yaml(args.config)
         print("Configuration loaded successfully.")
@@ -144,6 +144,7 @@ if __name__ == "__main__":
         print(f"An error occurred while loading the configuration: {e}")
         exit(1)
 
+    # init logger
     Logger.setup(config=config.log)
 
-    asyncio.run(main(config=config, db_path=Path(args.db)))
+    asyncio.run(run_service(config, args.db))

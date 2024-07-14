@@ -3,11 +3,11 @@ from typing import List, Optional, Sequence
 
 from bilibili_api import Credential, ResponseCodeException, video
 
-from bp_class import Episode
-from downloader.video_downloader import video_downloader
-from exceptions.DownloadError import DownloadError
-from utils.bp_log import Logger
-from utils.endorse import endorse
+from ..bp_class import Episode
+from ..exceptions.DownloadError import DownloadError
+from ..utils.bp_log import Logger
+from ..utils.endorse import endorse
+from .video_downloader import video_downloader
 
 logger = Logger().get_logger()
 

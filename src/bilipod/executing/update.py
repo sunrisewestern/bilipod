@@ -6,13 +6,12 @@ from typing import List
 from bilibili_api import Credential
 from tinydb import Query, table
 
-from bp_class import Episode, Pod
-from downloader import download_episodes
-from feed import generate_feed_xml, generate_opml  # noqa: F401
-from utils.biliuser import get_episode_list, get_pod_info
-from utils.bp_log import Logger
-from utils.db_query import query_episode
-
+from ..bp_class import Episode, Pod
+from ..downloader import download_episodes
+from ..feed import generate_feed_xml, generate_opml  # noqa: F401
+from ..utils.biliuser import get_episode_list, get_pod_info
+from ..utils.bp_log import Logger
+from ..utils.db_query import query_episode
 from .clean import clean_untracked_episodes
 
 logger = Logger().get_logger()

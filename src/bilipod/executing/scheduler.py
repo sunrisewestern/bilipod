@@ -3,7 +3,7 @@ import re
 
 import schedule
 
-from utils.bp_log import Logger
+from ..utils.bp_log import Logger
 
 logger = Logger().get_logger()
 
