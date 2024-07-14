@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bilipod:
+    image: sunrisewestern/bilipod:latest
+    container_name: bilipod
+    ports:
+      - "7001:5728"
+    volumes:
+      - /home/opc/bp/config_docker.yaml:/app/config.yaml
+      - /home/opc/bp/test_docker/data:/app/data
+      - /home/opc/bp/test_docker/logs:/app/logs
+
+    restart: unless-stopped

@@ -4,11 +4,11 @@
 # Web server related configuration.
 server:
   # HTTP server port.
-  port: 4443
+  port: 5728
 
   # Optional. If you want to hide Podsync behind reverse proxy like nginx, you can use this field.
   # Server will be accessible from http://{bind_address}:{port}, but episode links will point to this URL {hostname}.
-  hostname: "https://example.com:4443"
+  hostname: "https://example.com:5728"
   # Bind a specific IP addresses for server, default is to bind localhost or  
   bind_address: "0.0.0.0"
   # Specify path for reverse proxy, default is "/" and only [A-Za-z0-9] is allowed.
@@ -83,7 +83,7 @@ feeds:
 
 # Optional log config. If not specified logs to the stdout
 log:
-  filename : "bilipod.log"
+  filename : "/app/logs/bilipod.log"
   max_size : 50 # MB
   max_age : 30 # days
   compress : true
