@@ -58,7 +58,7 @@ async def run_service(config: BiliPodConfig, db_path: str):
 
     # init db
     db_path = Path(db_path)
-    if db_path.parent.exists():
+    if db_path.exists():
         # backup old db
         shutil.copyfile(db_path, db_path.with_suffix(".bak"))
         db_path.unlink()
