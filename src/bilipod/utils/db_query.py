@@ -2,7 +2,7 @@ from typing import Union
 
 from tinydb import Query
 
-from bp_class import Episode
+from ..bp_class import Episode
 
 
 def query_episode(episode: Union[Episode, dict]) -> Query:

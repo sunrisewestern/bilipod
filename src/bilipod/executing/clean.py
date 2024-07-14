@@ -2,10 +2,10 @@ from pathlib import Path
 
 from tinydb import Query, table
 
-from bp_class import Episode, Pod
-from utils.biliuser import get_episode_list
-from utils.bp_log import Logger
-from utils.db_query import query_episode
+from ..bp_class import Episode, Pod
+from ..utils.biliuser import get_episode_list
+from ..utils.bp_log import Logger
+from ..utils.db_query import query_episode
 
 logger = Logger().get_logger()
 

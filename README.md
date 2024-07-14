@@ -60,7 +60,66 @@
 
 ## Docker
 
-Docker support is currently under development.
+ The Docker image is available on Docker Hub under `sunrisewestern/bilipod`.
+
+### Running the Docker Container
+
+1. **Prepare Configuration and Data Directories**:
+   Ensure you have your `config.yaml` file ready and create a directory for the database if it doesn't exist:
+
+   ```bash
+   mkdir -p data
+   ```
+
+2. **Run the Docker Container**:
+   Use the following command to run the Docker container, mounting the configuration file and data directory:
+
+   ```bash
+   docker run -d \
+       --name bilipod \
+       -v $(pwd)/config.yaml:/app/config.yaml \
+       -v $(pwd)/data:/app/data \
+       -p 5728:5728 \
+       sunrisewestern/bilipod:latest
+   ```
+
+### Using Docker Compose
+
+ Create a `docker-compose.yml` file with the following content:
+
+```yaml
+version: '3.8'
+
+services:
+  bilipod:
+    image: sunrisewestern/bilipod:latest
+    container_name: bilipod
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./data:/app/data
+    ports:
+      - "5728:5728"
+```
+
+1. **Run with Docker Compose**:
+   Run the following commands to start the application using Docker Compose:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+   This command starts the container in detached mode.
+
+2. **Stopping the Docker Compose Services**:
+   To stop the services, run:
+
+   ```bash
+   docker-compose down
+   ```
+
+### Summary
+
+By following these steps, you can easily run the `bilipod` application using Docker. With the image available on Docker Hub, you can quickly deploy the application without needing to build the image yourself. Enjoy converting Bilibili user uploads into podcast feeds with ease!
 
 ## Documentation
 

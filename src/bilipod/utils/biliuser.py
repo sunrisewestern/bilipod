@@ -3,8 +3,8 @@ from typing import List, Literal, Optional
 from bilibili_api import Credential, user
 from bilibili_api.exceptions import ResponseCodeException
 
-from bp_class import Episode, Pod
-from utils.bp_log import Logger
+from ..bp_class import Episode, Pod
+from .bp_log import Logger
 
 logger = Logger().get_logger()
 

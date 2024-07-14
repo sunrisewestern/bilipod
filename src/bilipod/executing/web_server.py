@@ -4,7 +4,7 @@ import ssl
 from pathlib import Path
 from socketserver import ThreadingMixIn
 
-from utils.bp_log import Logger
+from ..utils.bp_log import Logger
 
 logger = Logger().get_logger()
 
