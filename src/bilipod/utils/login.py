@@ -58,6 +58,11 @@ async def update_credential(credential: Credential):
     update_status = await credential.check_refresh()
     if update_status:
         logger.debug("Updating token...")
-        await credential.refresh()
+        try:
+            await credential.refresh()
+        except Exception as e:
+            logger.error(f"Failed to update token: {e}")
+            sys.exit()
+
     else:
         logger.debug("No need to update token")

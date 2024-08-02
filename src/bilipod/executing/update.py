@@ -22,12 +22,21 @@ update_event = asyncio.Event()
 
 
 async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> None:
-    updated_pod_info = await get_pod_info(
-        uid=pod.uid,
-        credential=credential,
-        page_size=Pod.page_size,
-        keyword=Pod.keyword,
-    )
+
+    logger.debug(f"Updating pod {pod.feed_id}...")
+
+    # update pod info and episodes list
+    try:
+        updated_pod_info = await get_pod_info(
+            uid=pod.uid,
+            credential=credential,
+            page_size=Pod.page_size,
+            keyword=Pod.keyword,
+        )
+    except Exception as e:
+        logger.error(f"Failed to update pod {pod.feed_id}.")
+        logger.error(e)
+        return
 
     pod.episodes = updated_pod_info["episodes"]
     pod.update_at = time.time()

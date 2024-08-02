@@ -94,9 +94,10 @@ async def run_service(config: BiliPodConfig, db_path: str):
 
     logger.info("Finished initializing...")
 
-    # update pod and episodes by scheduler
+    # create task to update episodes when pod is updated
     asyncio.create_task(update_episodes(pod_tbl, episode_tbl, credential))
 
+    # update pod by scheduler
     logger.info("Starting scheduler...")
     for pod_info in pod_tbl.all():
         pod = Pod.from_dict(pod_info)
