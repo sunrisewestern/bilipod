@@ -8,7 +8,7 @@ from .config_parser import BiliPodConfig
 logger = Logger().get_logger()
 
 
-def login_with_qrcode_term(terminal: bool = True) -> Credential:
+def qrcode_login(terminal: bool = True) -> Credential:
     logger.info("Login：")
     if terminal:
         credential = login.login_with_qrcode_term()
@@ -34,14 +34,20 @@ async def get_credential(config: BiliPodConfig) -> Credential:
             sessdata=config.token.sessdata,
             ac_time_value=config.token.ac_time_value,
         )
+        # check valid
+        validation = await credential.check_valid()
+        if not validation:
+            logger.error("Login failed. Credential is not valid. Please check your token.")
+            sys.exit()
     else:
-        credential = login_with_qrcode_term()
-
-    # check valid
-    validation = await credential.check_valid()
-    if not validation:
-        logger.error("Login failed. Credential is not valid. Please check your token.")
-        sys.exit()
+        credential = qrcode_login()
+        print(
+            credential.ac_time_value,
+            credential.bili_jct,
+            credential.buvid3,
+            credential.dedeuserid,
+            credential.sessdata,
+        )
 
     user_info = await user.get_self_info(credential)
     logger.info(f"Welcome, {user_info['name']}!")
