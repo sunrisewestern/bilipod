@@ -1,7 +1,7 @@
+import asyncio
 import shutil
 import tempfile
 from pathlib import Path
-from subprocess import run
 from typing import Literal, Union
 
 import httpx
@@ -15,33 +15,41 @@ FFMPEG_PATH = "ffmpeg"
 logger = Logger().get_logger()
 
 
-async def download_url(url: str, out: Path, info: str):
+async def download_url(session, url: str, out: Path, name: str):
     try:
-        async with httpx.AsyncClient(headers=HEADERS) as sess:
-            resp = await sess.get(url)
-            length = int(resp.headers.get("content-length"))
-            with open(out, "wb") as f:
-                process = 0
-                next_report = 0
-
-                for chunk in resp.iter_bytes(1024):
-                    if not chunk:
-                        break
-                    process += len(chunk)
-
-                    if process >= next_report or process == length:
-                        logger.debug(
-                            f"Downloading {info} {process/length:.1%} completed"
-                        )
-                        next_report += length // 10
-
-                    f.write(chunk)
-
-                if process != length:
-                    raise DownloadError("Incomplete download", url, process, length)
-
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        resp = await session.get(url)
+        resp.raise_for_status()
+        length = int(resp.headers.get("content-length", 0))
+        with open(out, "wb") as f:
+            process = 0
+            next_report = 0
+            async for chunk in resp.aiter_bytes(1024):
+                if not chunk:
+                    break
+                process += len(chunk)
+                if process >= next_report or process == length:
+                    logger.debug(f"Downloading {name} {process/length:.1%} completed")
+                    next_report += length // 10
+                f.write(chunk)
+        if process != length:
+            raise DownloadError("Incomplete download", url, process, length)
+    except httpx.HTTPStatusError as e:
+        raise DownloadError("HTTP error", url, 0, 0) from e
+    except httpx.RequestError as e:
         raise DownloadError("Request error", url, 0, 0) from e
+
+
+async def run_ffmpeg(args):
+    process = await asyncio.create_subprocess_exec(
+        FFMPEG_PATH,
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        logger.error(f"FFmpeg error: {stderr.decode()}")
+        raise RuntimeError(f"FFmpeg error: {stderr.decode()}")
 
 
 async def video_downloader(
@@ -85,10 +93,6 @@ async def video_downloader(
     if format not in ["video", "audio"]:
         raise ValueError("format must be 'video', 'audio'")
 
-    tempdir = tempfile.TemporaryDirectory()
-
-    tempdir_path = Path(tempdir.name)
-
     try:
         v_url_data = await video_obj.get_download_url(0)
     except ResponseCodeException:
@@ -96,110 +100,116 @@ async def video_downloader(
         return None
 
     v_detecter = video.VideoDownloadURLDataDetecter(v_url_data)
-
     streams = v_detecter.detect_best_streams(
         video_max_quality=getattr(video.VideoQuality, f"_{video_quality}"),
         audio_max_quality=getattr(video.AudioQuality, f"_{audio_quality}"),
     )
 
     outfile = Path(outfile)
-    if outfile.exists():
-        logger.debug(f"File {outfile} already exists, skipping.")
 
-    # flv stream
-    if v_detecter.check_flv_stream() is True:
-        temp_flv = tempdir_path / f"{name}_flv_temp.flv"
-        await download_url(streams[0].url, temp_flv, f"{name} FLV stream")
-        if format == "video":
-            run(
-                args=[
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i",
-                    temp_flv,
-                    "-vcodec",
-                    "copy",
-                    "-acodec",
-                    "copy",
-                    outfile,
-                ]
+    async with httpx.AsyncClient(headers=HEADERS) as session:
+        tempdir = tempfile.TemporaryDirectory()
+        tempdir_path = Path(tempdir.name)
+
+        # flv stream
+        if v_detecter.check_flv_stream() is True:
+            temp_flv = tempdir_path / f"{name}_flv_temp.flv"
+            await download_url(session, streams[0].url, temp_flv, f"{name} FLV stream")
+            if format == "video":
+                await run_ffmpeg(
+                    [
+                        "-y",
+                        "-i",
+                        temp_flv,
+                        "-vcodec",
+                        "copy",
+                        "-acodec",
+                        "copy",
+                        str(outfile),
+                    ]
+                )
+            elif format == "audio":
+                await run_ffmpeg(
+                    [
+                        "-y",
+                        "-i",
+                        temp_flv,
+                        "-vn",
+                        "-acodec",
+                        "copy",
+                        str(outfile),
+                    ]
+                )
+            else:
+                pass
+        elif (
+            v_detecter.check_html5_mp4_stream() is True
+            or v_detecter.check_episode_try_mp4_stream() is True
+        ):
+            temp_mp4 = tempdir_path / f"{name}_mp4_temp.mp4"
+            await download_url(
+                session, streams[0].url, temp_mp4, f"{name} HTML5 MP4 stream"
             )
-        elif format == "audio":
-            run(
-                args=[
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i",
-                    temp_flv,
-                    "-vn",
-                    "-acodec",
-                    "copy",
-                    outfile,
-                ]
-            )
+            if format == "video":
+                # copy temp_mp4 to outfile
+                shutil.copy(temp_mp4, outfile)
+            elif format == "audio":
+                await run_ffmpeg(
+                    [
+                        "-y",
+                        "-i",
+                        temp_flv,
+                        "-vn",
+                        "-acodec",
+                        "copy",
+                        str(outfile),
+                    ]
+                )
         else:
-            pass
-    elif (
-        v_detecter.check_html5_mp4_stream() is True
-        or v_detecter.check_episode_try_mp4_stream() is True
-    ):
-        temp_mp4 = tempdir_path / f"{name}_mp4_temp.mp4"
-        await download_url(streams[0].url, temp_mp4, f"{name} HTML5 MP4 stream")
-        if format == "video":
-            # copy temp_mp4 to outfile
-            shutil.copy(temp_mp4, outfile)
-        elif format == "audio":
-            run(
-                args=[
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i",
-                    temp_mp4,
-                    "-vn",
-                    "-acodec",
-                    "copy",
-                    outfile,
-                ]
-            )
-    else:
-        # mp4 stream
-        temp_audio = tempdir_path / f"{name}_audio_temp.m4s"
-        temp_video = tempdir_path / f"{name}_video_temp.m4s"
-        if format == "video":
-            await download_url(streams[0].url, temp_video, f"{name} Video stream")
-            await download_url(streams[1].url, temp_audio, f"{name} Audio stream")
-            # merge
-            run(
-                args=[
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i",
-                    temp_video,
-                    "-i",
-                    temp_audio,
-                    "-vcodec",
-                    "copy",
-                    "-acodec",
-                    "copy",
-                    outfile,
-                ]
-            )
-        elif format == "audio":
-            await download_url(streams[1].url, temp_audio, f"{name} Audio stream")
+            # mp4 stream
+            temp_audio = tempdir_path / f"{name}_audio_temp.m4s"
+            temp_video = tempdir_path / f"{name}_video_temp.m4s"
+            if format == "video":
 
-            run(
-                args=[
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i",
-                    temp_audio,
-                    "-vn",
-                    "-acodec",
-                    "libmp3lame",
-                    outfile,
-                ]
-            )
-        else:
-            pass
+                await asyncio.gather(
+                    download_url(
+                        session, streams[0].url, temp_video, f"{name} Video stream"
+                    ),
+                    download_url(
+                        session, streams[1].url, temp_audio, f"{name} Audio stream"
+                    ),
+                )
+                # merge
+                await run_ffmpeg(
+                    [
+                        "-y",
+                        "-i",
+                        temp_video,
+                        "-i",
+                        temp_audio,
+                        "-vcodec",
+                        "copy",
+                        "-acodec",
+                        "copy",
+                        str(outfile),
+                    ]
+                )
+            elif format == "audio":
+                await download_url(
+                    session, streams[1].url, temp_audio, f"{name} Audio stream"
+                )
+                await run_ffmpeg(
+                    [
+                        "-y",
+                        "-i",
+                        temp_audio,
+                        "-vn",
+                        "-acodec",
+                        "libmp3lame",
+                        str(outfile),
+                    ]
+                )
+            else:
+                pass
 
-    tempdir.cleanup()
+        tempdir.cleanup()

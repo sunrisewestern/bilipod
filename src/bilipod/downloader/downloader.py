@@ -71,7 +71,7 @@ async def download_episodes(
     episode_list: Sequence[Episode],
     credential: Optional[Credential] = None,
     max_attempts: int = 3,
-    chunk_size: int = 10,
+    chunk_size: int = 20,
 ):
     attempts = 0
 
@@ -82,7 +82,9 @@ async def download_episodes(
     while attempts < max_attempts and current_to_download:
         attempts += 1
         logger.debug(f"Attempt {attempts}/{max_attempts}")
-        current_to_download = await process_chunks(current_to_download, credential)
+        current_to_download = await process_chunks(
+            current_to_download, chunk_size=chunk_size, credential=credential
+        )
 
     # Optionally handle the failed downloads after all retries
     if current_to_download:
