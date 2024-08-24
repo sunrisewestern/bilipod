@@ -23,6 +23,6 @@ async def endorse(
             elif endorse_arg.startswith("coin|"):
                 await v_obj.pay_coin(int(endorse_arg.split("|")[1]))
             elif endorse_arg.startswith("favorite|"):
-                await v_obj.set_favorite(add_media_id=[int(endorse_arg.split("|")[1])])
+                await v_obj.set_favorite(add_media_ids=[int(endorse_arg.split("|")[1])])
             else:
                 raise ValueError("Unsupported endorse method: " + endorse_arg)
