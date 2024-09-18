@@ -158,7 +158,7 @@ async def video_downloader(
                     [
                         "-y",
                         "-i",
-                        temp_flv,
+                        temp_mp4,
                         "-vn",
                         "-acodec",
                         "copy",

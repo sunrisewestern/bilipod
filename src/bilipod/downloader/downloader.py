@@ -41,15 +41,16 @@ async def download_episode(
         except DownloadError as e:
             logger.debug(f"Attempt to download {episode.bvid} failed: {e}")
             return episode
-        logger.debug(f"Downloaded {episode.bvid} with size {episode.size}")
 
         try:
             await endorse(episode.endorse, v_obj, credential)
+            logger.debug(f"Endorsed {episode.bvid}")
         except Exception as e:
             logger.error(f"Failed to endorse {episode.bvid}: {e}")
 
     episode.status = "downloaded"  # Update status on successful download
     episode.set_size()
+    logger.debug(f"Downloaded {episode.bvid} with size {episode.size}")
     episode.expand_description(v_info["dynamic"])
 
 
