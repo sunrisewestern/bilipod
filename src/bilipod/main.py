@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import shutil
 import signal
+import sys
 import threading
 import time
 from pathlib import Path
@@ -85,12 +86,16 @@ async def run_service(config: BiliPodConfig, db_path: str):
     )
     web_server_thread.start()
 
-    await data_initialize(
-        config=config,
-        pod_tbl=pod_tbl,
-        episode_tbl=episode_tbl,
-        credential=credential,
-    )
+    try:
+        await data_initialize(
+            config=config,
+            pod_tbl=pod_tbl,
+            episode_tbl=episode_tbl,
+            credential=credential,
+        )
+    except Exception as e:
+        logger.error(e)
+        sys.exit()
 
     logger.info("Finished initializing...")
 

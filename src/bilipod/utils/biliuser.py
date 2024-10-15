@@ -26,12 +26,10 @@ async def get_pod_info(
 ) -> dict:
     try:
         user_obj = user.User(uid=uid, credential=credential)
+        info = await user_obj.get_user_info()
     except ResponseCodeException as e:
         logger.error(e)
         raise e
-
-    info = await user_obj.get_user_info()
-    # logger.debug(info)
 
     if keyword:
         video_list = await user_obj.get_videos(
