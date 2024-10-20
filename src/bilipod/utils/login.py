@@ -35,7 +35,7 @@ async def get_credential(config: BiliPodConfig) -> Credential:
         credential = Credential(
             bili_jct=config.token.bili_jct,
             buvid3=config.token.buvid3,
-            buvid4=config.token.buvid4,
+            # buvid4=config.token.buvid4,
             dedeuserid=config.token.dedeuserid,
             sessdata=config.token.sessdata,
             ac_time_value=config.token.ac_time_value,
