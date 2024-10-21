@@ -1,7 +1,6 @@
 from typing import List, Literal, Optional
 
 from bilibili_api import Credential, user
-from bilibili_api.exceptions import ResponseCodeException
 
 from ..bp_class import Episode, Pod
 from .bp_log import Logger
@@ -24,12 +23,18 @@ async def get_pod_info(
     playlist_sort: Literal["desc", "asc"] = "desc",
     credential: Credential = None,
 ) -> dict:
+    user_obj = user.User(uid=uid, credential=credential)
     try:
-        user_obj = user.User(uid=uid, credential=credential)
         info = await user_obj.get_user_info()
-    except ResponseCodeException as e:
+    except Exception as e:
+        logger.error("Failed to get user info")
         logger.error(e)
-        raise e
+        info = {
+            "name": uid,
+            "sign": "",
+            "face": "https://i0.hdslb.com/bfs/archive/c8fd97a40bf79f03e7b76cbc87236f612caef7b2.png",
+            "official": {},
+        }
 
     if keyword:
         video_list = await user_obj.get_videos(
@@ -68,10 +73,13 @@ async def get_pod_info(
 
     return {
         "uid": uid,
-        "title": info["name"],
-        "description": info["sign"],
-        "cover_art": info["face"],
-        "author": info["official"].get("title", ""),
+        "title": info.get("name", "Unknown"),
+        "description": info.get("sign", ""),
+        "cover_art": info.get(
+            "face",
+            "https://i0.hdslb.com/bfs/archive/c8fd97a40bf79f03e7b76cbc87236f612caef7b2.png",
+        ),
+        "author": info.get("official", {}).get("title", ""),
         "link": f"https://space.bilibili.com/{uid}",
         "episodes": episodes_info,
     }
