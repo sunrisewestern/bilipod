@@ -86,16 +86,13 @@ async def run_service(config: BiliPodConfig, db_path: str):
     )
     web_server_thread.start()
 
-    try:
-        await data_initialize(
-            config=config,
-            pod_tbl=pod_tbl,
-            episode_tbl=episode_tbl,
-            credential=credential,
-        )
-    except Exception as e:
-        logger.error(e)
-        sys.exit()
+    # initialize pod and episodes
+    await data_initialize(
+        config=config,
+        pod_tbl=pod_tbl,
+        episode_tbl=episode_tbl,
+        credential=credential,
+    )
 
     logger.info("Finished initializing...")
 

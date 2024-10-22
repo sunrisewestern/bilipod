@@ -23,14 +23,16 @@ async def get_pod_info(
     playlist_sort: Literal["desc", "asc"] = "desc",
     credential: Credential = None,
 ) -> dict:
+
     user_obj = user.User(uid=uid, credential=credential)
+
     try:
         info = await user_obj.get_user_info()
     except Exception as e:
         logger.error("Failed to get user info")
         logger.error(e)
         info = {
-            "name": uid,
+            "name": str(uid),
             "sign": "",
             "face": "https://i0.hdslb.com/bfs/archive/c8fd97a40bf79f03e7b76cbc87236f612caef7b2.png",
             "official": {},
