@@ -161,8 +161,9 @@ async def video_downloader(
                         temp_mp4,
                         "-vn",
                         "-acodec",
-                        "copy",
-                        str(outfile),
+                        "libmp3lame",
+                        "-q:a 2",
+                        str(outfile),   
                     ]
                 )
         else:
