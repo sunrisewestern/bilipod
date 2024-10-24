@@ -38,6 +38,9 @@ async def data_initialize(
             feed_id=feed_id,
             data_dir=config.storage.data_dir,
             base_url=base_url,
+            uid=feed_config.uid,
+            page_size=feed_config.page_size,
+            keyword=feed_config.keyword,
         )
 
         # get user info and video list
@@ -48,7 +51,7 @@ async def data_initialize(
             keyword=pod.keyword,
         )
         pod.update(**pod_info)
-        pod.update(**feed_config.to_dict()) # pod info from config
+        pod.update(**feed_config.to_dict())  # pod info from config
         pod.update_at = time.time()
         pod_tbl.insert(pod.to_dict())
 
