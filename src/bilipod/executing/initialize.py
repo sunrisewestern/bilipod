@@ -51,7 +51,9 @@ async def data_initialize(
             keyword=pod.keyword,
         )
         pod.update(**pod_info)
-        pod.update(**feed_config.to_dict())  # pod info from config
+        pod.update(
+            **{k: v for k, v in feed_config.to_dict().items() if v is not None}
+        )  # pod info from config
         pod.update_at = time.time()
         pod_tbl.insert(pod.to_dict())
 
