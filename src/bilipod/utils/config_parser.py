@@ -106,8 +106,7 @@ class BiliPodConfig:
         token_data = config_data.get("token", {})
         if token_data.get("cookie_file_path"):
             token_data_update = parse_netscape_cookies(token_data["cookie_file_path"])
-
-        token_data.update(token_data_update)
+            token_data.update(token_data_update)
 
         token_config = TokenConfig(
             bili_jct=token_data["bili_jct"],
