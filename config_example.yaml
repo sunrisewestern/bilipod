@@ -31,9 +31,11 @@ token:
   # refer to https://nemo2011.github.io/bilibili-api/#/get-credential for more details
   bili_jct:
   buvid3:
+  buvid4: # optional
   dedeuserid:
   sessdata:
   ac_time_value: # optional
+  cookie_file_path: # optional, use this if you want to use exported Netscape cookies
 
 feeds:
   xiaoyuehankehan:

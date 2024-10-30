@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import shutil
 import signal
+import sys
 import threading
 import time
 from pathlib import Path
@@ -85,6 +86,7 @@ async def run_service(config: BiliPodConfig, db_path: str):
     )
     web_server_thread.start()
 
+    # initialize pod and episodes
     await data_initialize(
         config=config,
         pod_tbl=pod_tbl,

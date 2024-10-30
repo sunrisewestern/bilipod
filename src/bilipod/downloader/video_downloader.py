@@ -48,7 +48,7 @@ async def run_ffmpeg(args):
     )
     stdout, stderr = await process.communicate()
     if process.returncode != 0:
-        logger.error(f"FFmpeg error: {stderr.decode()}")
+        # logger.error(f"FFmpeg error: {stderr.decode()}")
         raise RuntimeError(f"FFmpeg error: {stderr.decode()}")
 
 
@@ -158,11 +158,12 @@ async def video_downloader(
                     [
                         "-y",
                         "-i",
-                        temp_flv,
+                        temp_mp4,
                         "-vn",
                         "-acodec",
-                        "copy",
-                        str(outfile),
+                        "libmp3lame",
+                        "-q:a 2",
+                        str(outfile),   
                     ]
                 )
         else:

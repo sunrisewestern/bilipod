@@ -3,6 +3,8 @@ from typing import Dict, Literal, Optional, Sequence, Union
 
 import yaml
 
+from .parse_netscape import parse_netscape_cookies
+
 
 @dataclass
 class ServerConfig:
@@ -102,6 +104,11 @@ class BiliPodConfig:
 
         # Parse and create TokenConfig
         token_data = config_data.get("token", {})
+        if token_data.get("cookie_file_path"):
+            token_data_update = parse_netscape_cookies(token_data["cookie_file_path"])
+
+        token_data.update(token_data_update)
+
         token_config = TokenConfig(
             bili_jct=token_data["bili_jct"],
             buvid3=token_data["buvid3"],
