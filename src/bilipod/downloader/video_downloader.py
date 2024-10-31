@@ -142,6 +142,8 @@ async def video_downloader(
                 )
             else:
                 pass
+        
+        # html5 mp4 stream
         elif (
             v_detecter.check_html5_mp4_stream() is True
             or v_detecter.check_episode_try_mp4_stream() is True
@@ -154,6 +156,7 @@ async def video_downloader(
                 # copy temp_mp4 to outfile
                 shutil.copy(temp_mp4, outfile)
             elif format == "audio":
+                print(str(outfile))
                 await run_ffmpeg(
                     [
                         "-y",
@@ -162,8 +165,9 @@ async def video_downloader(
                         "-vn",
                         "-acodec",
                         "libmp3lame",
-                        "-q:a 2",
-                        str(outfile),   
+                        "-q:a",
+                        "2",
+                        str(outfile),
                     ]
                 )
         else:
