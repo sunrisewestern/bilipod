@@ -156,7 +156,6 @@ async def video_downloader(
                 # copy temp_mp4 to outfile
                 shutil.copy(temp_mp4, outfile)
             elif format == "audio":
-                print(str(outfile))
                 await run_ffmpeg(
                     [
                         "-y",
