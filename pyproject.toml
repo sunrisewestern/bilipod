@@ -1,12 +1,12 @@
 [project]
 name = "bilipod"
-version = "0.4.2"
+version = "0.4.4"
 description = "Make bilibili user or playlist into podcast"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 dependencies = [
-  "bilibili-api-python==16.3.0",
+  "bilibili-api-python @ git+https://github.com/Nemo2011/bilibili-api.git@dev",
   "feedgen==1.0.0",
   "loguru==0.7.2",
   "PyYAML>=6.0",
@@ -14,10 +14,10 @@ dependencies = [
   "tinydb==4.8.0",
   "schedule==1.2.2",
 ]
-classifiers   = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-    "License :: OSI Approved :: GPL3 License",
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: GPL3 License",
 ]
 
 authors = [{ name = "X Chen", email = "chenxiaoxime@gmail.com" }]

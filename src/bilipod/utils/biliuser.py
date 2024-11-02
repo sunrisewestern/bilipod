@@ -29,8 +29,8 @@ async def get_pod_info(
     try:
         info = await user_obj.get_user_info()
     except Exception as e:
-        logger.error("Failed to get user info")
-        logger.error(e)
+        logger.warning("Failed to get user info from Bilibili.")
+        logger.debug(f"Failed to get user info from Bilibili: {e}")
         info = {
             "name": str(uid),
             "sign": "",
