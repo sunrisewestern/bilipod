@@ -1,6 +1,7 @@
 import sys
+from typing import Literal
 
-from bilibili_api import Credential, login, login_func, user
+from bilibili_api import Credential, Geetest, GeetestType, login_v2, sync, user
 
 from .bp_log import Logger
 from .config_parser import BiliPodConfig
@@ -8,30 +9,66 @@ from .config_parser import BiliPodConfig
 logger = Logger().get_logger()
 
 
-def qrcode_login(terminal: bool = True) -> Credential:
-    logger.info("QR code Logining...")
-    if terminal:
-        credential = login.login_with_qrcode_term()
-    else:
-        credential = login.login_with_qrcode()
+async def password_login(
+    choice: Literal["pwd", "sms"],
+    username=None,
+    password=None,
+    phone_number=None,
+    country_code="+86",
+) -> Credential:
+    gee = Geetest()
+    await gee.generate_test()
+    gee.start_geetest_server()
+    print(gee.get_geetest_server_url())
+    while not gee.has_done():
+        pass
+    gee.close_geetest_server()
+    print("result:", gee.get_result())
 
-    qr_pic, login_key = login_func.get_qrcode()
+    # Password login
+    if choice == "pwd":
+        cred = await login_v2.login_with_password(
+            username=username, password=password, geetest=gee
+        )
 
-    try:
-        credential.raise_for_no_bili_jct()
-        credential.raise_for_no_buvid3()
-        credential.raise_for_no_dedeuserid()
-        credential.raise_for_no_sessdata()
-        credential.raise_for_no_ac_time_value()
-    except Exception as e:  # noqa E722
-        logger.error(f"QR code login Credential check failed. Error: {e}")
-        sys.exit()
+    # SMS login
+    if choice == "sms":
+        phone = login_v2.PhoneNumber(phone_number, country_code)
+        captcha_id = await login_v2.send_sms(phonenumber=phone, geetest=gee)
+        print("captcha_id:", captcha_id)
+        code = input("code: ")
+        cred = await login_v2.login_with_sms(
+            phonenumber=phone, code=code, captcha_id=captcha_id
+        )
 
-    return credential
+    # Security verification
+    if isinstance(cred, login_v2.LoginCheck):
+        gee = Geetest()
+        await gee.generate_test(type_=GeetestType.VERIFY)
+        gee.start_geetest_server()
+        print(gee.get_geetest_server_url())
+        while not gee.has_done():
+            pass
+        gee.close_geetest_server()
+        print("result:", gee.get_result())
+        await cred.send_sms(gee)
+        code = input("code:")
+        cred = await cred.complete_check(code)
+
+    print("cookies:", cred.get_cookies())
+    return cred
 
 
 async def get_credential(config: BiliPodConfig) -> Credential:
-    if config.token.bili_jct:
+    if (
+        config.token.bili_jct
+        and config.token.buvid3
+        and config.token.dedeuserid
+        and config.token.sessdata
+    ):
+        if not config.token.ac_time_value:
+            logger.warning("ac_time_value is not set. It may cause some issues.")
+
         credential = Credential(
             bili_jct=config.token.bili_jct,
             buvid3=config.token.buvid3,
@@ -48,7 +85,40 @@ async def get_credential(config: BiliPodConfig) -> Credential:
             )
             sys.exit()
     else:
-        credential = qrcode_login()
+        if config.login.username and config.login.password:
+            # Password login
+            credential = await password_login(
+                choice="pwd",
+                username=config.login.username,
+                password=config.login.password,
+            )
+        elif config.login.phone_number:
+            # SMS login
+            credential = await password_login(
+                choice="sms",
+                phone_number=config.login.phone_number,
+                country_code=config.login.country_code,
+            )
+        else:
+            choice = input("Please choose login method (pwd/sms): ")
+            if choice == "pwd":
+                username = input("Username: ")
+                password = input("Password: ")
+                credential = await password_login(
+                    choice="pwd", username=username, password=password
+                )
+            elif choice == "sms":
+                phone_number = input("Phone number: ")
+                country_code = input("Country code (default +86): ") or "+86"
+                credential = await password_login(
+                    choice="sms",
+                    phone_number=phone_number,
+                    country_code=country_code,
+                )
+            else:
+                logger.error("Invalid choice. Please choose either 'pwd' or 'sms'.")
+                sys.exit()
+
         logger.debug(
             f"""
                 bili_jct: {credential.bili_jct}

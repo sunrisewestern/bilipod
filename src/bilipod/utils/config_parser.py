@@ -34,6 +34,14 @@ class TokenConfig:
 
 
 @dataclass
+class LoginConfig:
+    username: Optional[str] = None
+    password: Optional[str] = None
+    phone_number: Optional[str] = None
+    country_code: Optional[str] = "+86"
+
+
+@dataclass
 class FeedConfig:
     uid: Optional[str | int] = None
     sid: Optional[str | int] = None
@@ -75,6 +83,7 @@ class BiliPodConfig:
     server: ServerConfig
     storage: StorageConfig
     token: TokenConfig
+    login: LoginConfig
     feeds: Dict[str, FeedConfig]
     log: LogConfig
 
@@ -117,6 +126,15 @@ class BiliPodConfig:
             ac_time_value=token_data.get("ac_time_value", ""),
         )
 
+        # Parse and create login_config
+        login_data = config_data.get("login", {})
+        login_config = LoginConfig(
+            username=login_data.get("username"),
+            password=login_data.get("password"),
+            phone_number=login_data.get("phone_number"),
+            country_code=login_data.get("country_code", "+86"),
+        )
+
         # Parse and create FeedConfig for each feed
         feeds_data = config_data.get("feeds", {})
         feed_configs = {
@@ -131,6 +149,7 @@ class BiliPodConfig:
             server=server_config,
             storage=storage_config,
             token=token_config,
+            login=login_config,
             feeds=feed_configs,
             log=log_config,
         )

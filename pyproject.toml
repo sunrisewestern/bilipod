@@ -13,6 +13,8 @@ dependencies = [
   "requests>=2.27.1",
   "tinydb==4.8.0",
   "schedule==1.2.2",
+  "curl_cffi==0.10.0",
+  'httpx==0.26.0',
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
