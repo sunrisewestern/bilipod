@@ -113,7 +113,7 @@ async def video_downloader(
 
         # flv stream
         if v_detecter.check_flv_mp4_stream() is True:
-            if v_detecter.__data["format"].startswith("flv"):
+            if isinstance(streams[0], video.FLVStreamDownloadURL):
                 temp_flv = tempdir_path / f"{name}_flv_temp.flv"
                 await download_url(
                     session, streams[0].url, temp_flv, f"{name} FLV stream"

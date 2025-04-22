@@ -7,6 +7,7 @@ import datetime
 import tzlocal
 from feedgen.feed import FeedGenerator
 from tinydb import table
+import re
 
 from ..bp_class import Episode, Pod
 from ..utils.biliuser import get_episode_list
@@ -15,6 +16,13 @@ from ..utils.db_query import query_episode
 
 logger = Logger().get_logger()
 
+
+def sanitize_for_xml(text):
+    """Removes characters illegal in XML documents."""
+    if not isinstance(text, str):
+        return "" 
+    sanitized = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
+    return sanitized
 
 def convert_timestamp_to_localtime(timestamp: int) -> str:
     local_timezone = tzlocal.get_localzone()
@@ -36,18 +44,20 @@ def generate_feed_xml(
         "link": str
     }
     """
+    logger.debug(f"Generating feed for {pod.feed_id}")
+    
     fg = FeedGenerator()
     fg.load_extension("podcast", atom=False, rss=True)
-    fg.title(f"{pod.title}[{pod.keyword}]" if pod.keyword else pod.title)
+    fg.title(sanitize_for_xml(f"{pod.title}[{pod.keyword}]" if pod.keyword else pod.title))
     if pod.description:
-        fg.description(pod.description)
+        fg.description(sanitize_for_xml(pod.description))
     else:
-        fg.description(pod.title)
-    fg.link({"href": pod.link, "rel": "alternate"})
-    fg.image(url=pod.cover_art, title=pod.title, link=pod.link)
+        fg.description(sanitize_for_xml(pod.title))
+    fg.link({"href": sanitize_for_xml(pod.link), "rel": "alternate"})
+    fg.image(url=sanitize_for_xml(pod.cover_art), title=sanitize_for_xml(pod.title), link=sanitize_for_xml(pod.link))
 
-    fg.podcast.itunes_category(pod.category, pod.subcategories)
-    fg.podcast.itunes_author(pod.author)
+    fg.podcast.itunes_category(sanitize_for_xml(pod.category), [sanitize_for_xml(sub) for sub in pod.subcategories])
+    fg.podcast.itunes_author(sanitize_for_xml(pod.author))
 
     matched_episodes: list[Episode] = []
     for episode in get_episode_list(pod):
@@ -66,24 +76,30 @@ def generate_feed_xml(
 
         pubdate = convert_timestamp_to_localtime(episode.pubdate)
         fe = fg.add_entry()
-        fe.title(episode.title)
-        fe.link({"href": episode.link, "rel": "alternate"})
-        fe.description(episode.description)
-        fe.guid(episode.bvid, permalink=False)
+        fe.title(sanitize_for_xml(episode.title))
+        fe.link({"href": sanitize_for_xml(episode.link), "rel": "alternate"})
+        fe.description(sanitize_for_xml(episode.description))
+        fe.guid(sanitize_for_xml(episode.bvid), permalink=False)
         fe.pubDate(pubdate)
-        fe.enclosure(url=episode.url, length=episode.size, type=episode.type)
+        fe.enclosure(url=sanitize_for_xml(episode.url), length=episode.size, type=sanitize_for_xml(episode.type))
 
         fe.podcast.itunes_duration(episode.duration)
-        fe.podcast.itunes_image(episode.image)
+        fe.podcast.itunes_image(sanitize_for_xml(episode.image))
         fe.podcast.itunes_explicit(episode.explicit)
 
     feed_name = f"{pod.feed_id.replace('feed.', '', 1)}"
 
-    # Remove old feed if exists
-    # str(pod.data_dir / f"{feed_name}.xml").unlink(missing_ok=True)
-
-    fg.rss_file(
-        filename=str(pod.data_dir / f"{feed_name}.xml"),
-        pretty=True,
-    )
-    logger.info(f"Generated feed for {feed_name}")
+    try:
+        fg.rss_file(
+            filename=str(pod.data_dir / f"{feed_name}.xml"),
+            pretty=True,
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate feed for {pod.feed_id}: {e}")
+        # print all fg attributes to debug
+        logger.debug(fg.__dict__)
+        logger.debug(fg.rss_str(pretty=True))
+        logger.debug(fg.atom_str(pretty=True))
+        return
+    else:
+        logger.info(f"Generated feed for {feed_name}")
