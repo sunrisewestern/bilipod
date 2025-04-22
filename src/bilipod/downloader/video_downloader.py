@@ -112,63 +112,63 @@ async def video_downloader(
         tempdir_path = Path(tempdir.name)
 
         # flv stream
-        if v_detecter.check_flv_stream() is True:
-            temp_flv = tempdir_path / f"{name}_flv_temp.flv"
-            await download_url(session, streams[0].url, temp_flv, f"{name} FLV stream")
-            if format == "video":
-                await run_ffmpeg(
-                    [
-                        "-y",
-                        "-i",
-                        temp_flv,
-                        "-vcodec",
-                        "copy",
-                        "-acodec",
-                        "copy",
-                        str(outfile),
-                    ]
+        if v_detecter.check_flv_mp4_stream() is True:
+            if v_detecter.__data["format"].startswith("flv"):
+                temp_flv = tempdir_path / f"{name}_flv_temp.flv"
+                await download_url(
+                    session, streams[0].url, temp_flv, f"{name} FLV stream"
                 )
-            elif format == "audio":
-                await run_ffmpeg(
-                    [
-                        "-y",
-                        "-i",
-                        temp_flv,
-                        "-vn",
-                        "-acodec",
-                        "copy",
-                        str(outfile),
-                    ]
-                )
+                if format == "video":
+                    await run_ffmpeg(
+                        [
+                            "-y",
+                            "-i",
+                            temp_flv,
+                            "-vcodec",
+                            "copy",
+                            "-acodec",
+                            "copy",
+                            str(outfile),
+                        ]
+                    )
+                elif format == "audio":
+                    await run_ffmpeg(
+                        [
+                            "-y",
+                            "-i",
+                            temp_flv,
+                            "-vn",
+                            "-acodec",
+                            "copy",
+                            str(outfile),
+                        ]
+                    )
+                else:
+                    pass
+
+            # html5 mp4 stream
             else:
-                pass
-        
-        # html5 mp4 stream
-        elif (
-            v_detecter.check_html5_mp4_stream() is True
-            or v_detecter.check_episode_try_mp4_stream() is True
-        ):
-            temp_mp4 = tempdir_path / f"{name}_mp4_temp.mp4"
-            await download_url(
-                session, streams[0].url, temp_mp4, f"{name} HTML5 MP4 stream"
-            )
-            if format == "video":
-                # copy temp_mp4 to outfile
-                shutil.copy(temp_mp4, outfile)
-            elif format == "audio":
-                await run_ffmpeg(
-                    [
-                        "-y",
-                        "-i",
-                        temp_mp4,
-                        "-vn",
-                        "-acodec",
-                        "libmp3lame",
-                        "-q:a",
-                        "2",
-                        str(outfile),
-                    ]
+                temp_mp4 = tempdir_path / f"{name}_mp4_temp.mp4"
+                await download_url(
+                    session, streams[0].url, temp_mp4, f"{name} HTML5 MP4 stream"
                 )
+                if format == "video":
+                    # copy temp_mp4 to outfile
+                    shutil.copy(temp_mp4, outfile)
+                elif format == "audio":
+                    await run_ffmpeg(
+                        [
+                            "-y",
+                            "-i",
+                            temp_mp4,
+                            "-vn",
+                            "-acodec",
+                            "libmp3lame",
+                            "-q:a",
+                            "2",
+                            str(outfile),
+                        ]
+                    )
         else:
             # mp4 stream
             temp_audio = tempdir_path / f"{name}_audio_temp.m4s"

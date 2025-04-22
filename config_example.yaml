@@ -37,6 +37,13 @@ token:
   ac_time_value: # optional
   cookie_file_path: # optional, use this if you want to use exported Netscape cookies
 
+login:
+  # Optional. If you want to use bilibili account info (e.g. username, password, phone number) to login, you can set this field.
+  username:
+  password:
+  phone_number:
+  country_code: # default is +86
+
 feeds:
   xiaoyuehankehan:
     # user_id (uid) or playlist_id (sid):

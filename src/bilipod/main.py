@@ -2,12 +2,12 @@ import argparse
 import asyncio
 import shutil
 import signal
-import sys
 import threading
 import time
 from pathlib import Path
 
 import schedule
+from bilibili_api import request_settings
 from tinydb import TinyDB
 
 from .bp_class import Pod
@@ -48,6 +48,8 @@ def run_scheduler():
 
 
 async def run_service(config: BiliPodConfig, db_path: str):
+
+    request_settings.set("impersonate", "chrome131")
 
     logger = Logger().get_logger()
 
