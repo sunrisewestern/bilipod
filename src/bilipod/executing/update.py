@@ -87,7 +87,7 @@ async def update_episodes(
         if episode_to_update:
             episode_to_update = list(set(episode_to_update))
             logger.debug(f"Episodes to update: {episode_to_update}")
-            await download_episodes(episode_to_update, credential=credential)
+            await download_episodes(episode_to_update, credential=credential, max_attempts=10)
 
             # update episode list in episode_tbl
             episode_tbl.insert_multiple(

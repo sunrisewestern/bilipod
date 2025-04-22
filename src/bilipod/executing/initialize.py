@@ -65,7 +65,7 @@ async def data_initialize(
         episode_list.extend(pod_episode_list)
 
     logger.info(f"Initializing download, {len(episode_list)} episodes found.")
-    await download_episodes(episode_list, credential=credential)
+    await download_episodes(episode_list, credential=credential, max_attempts=10)
 
     episode_tbl.insert_multiple([episode.to_dict() for episode in set(episode_list)])
 
