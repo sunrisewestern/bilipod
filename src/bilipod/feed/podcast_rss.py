@@ -56,7 +56,7 @@ def generate_feed_xml(
     fg.link({"href": sanitize_for_xml(pod.link), "rel": "alternate"})
     fg.image(url=sanitize_for_xml(pod.cover_art), title=sanitize_for_xml(pod.title), link=sanitize_for_xml(pod.link))
 
-    fg.podcast.itunes_category(sanitize_for_xml(pod.category), [sanitize_for_xml(sub) for sub in pod.subcategories])
+    fg.podcast.itunes_category(sanitize_for_xml(pod.category), [sanitize_for_xml(sub) for sub in pod.subcategories] if pod.subcategories else [])
     fg.podcast.itunes_author(sanitize_for_xml(pod.author))
 
     matched_episodes: list[Episode] = []
