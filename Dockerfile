@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 RUN apt remove -y git
 
 RUN mkdir -p /app/data
+RUN mkdir -p /app/db
 
 EXPOSE 5728
 
-CMD ["bilipod", "--config=/app/config.yaml", "--db=/app/data.db"]
+CMD ["bilipod", "--config=/app/config.yaml", "--db=/app/db/data.db"]
