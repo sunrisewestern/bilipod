@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . /app
 
 # Install ffmpeg and other dependencies
-RUN apt-get update && apt-get install -y ffmpeg \
+RUN apt-get update && apt-get install -y ffmpeg git\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir setuptools \
     && pip install --no-cache-dir .
 
+RUN apt remove -y git
 
 RUN mkdir -p /app/data
 
