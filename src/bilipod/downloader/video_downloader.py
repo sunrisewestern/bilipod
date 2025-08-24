@@ -4,35 +4,46 @@ import tempfile
 from pathlib import Path
 from typing import Literal, Union
 
+import aiohttp
 import httpx
-from bilibili_api import HEADERS, Credential, ResponseCodeException, video
+from bilibili_api import (
+    HEADERS,
+    Credential,
+    ResponseCodeException,
+    select_client,
+    video,
+)
 
 from ..exceptions.DownloadError import DownloadError
 from ..utils.bp_log import Logger
 
 FFMPEG_PATH = "ffmpeg"
+select_client("aiohttp")
 
 logger = Logger().get_logger()
 
 
 async def download_url(session, url: str, out: Path, name: str):
     try:
-        resp = await session.get(url)
-        resp.raise_for_status()
-        length = int(resp.headers.get("content-length", 0))
-        with open(out, "wb") as f:
-            process = 0
-            next_report = 0
-            async for chunk in resp.aiter_bytes(1024):
-                if not chunk:
-                    break
-                process += len(chunk)
-                if process >= next_report or process == length:
-                    logger.debug(f"Downloading {name} {process/length:.1%} completed")
-                    next_report += length // 10
-                f.write(chunk)
-        if process != length:
-            raise DownloadError("Incomplete download", url, process, length)
+        async with session.get(url, headers=HEADERS) as resp:
+            resp.raise_for_status()
+            length = int(resp.headers.get("content-length", 0))
+            with open(out, "wb") as f:
+                process = 0
+                next_report = 0
+                block_size = 1024 * 1024
+                async for chunk in resp.content.iter_chunked(block_size):
+                    if not chunk:
+                        break
+                    process += len(chunk)
+                    if process >= next_report or process == length:
+                        logger.debug(
+                            f"Downloading {name} {process/length:.1%} completed"
+                        )
+                        next_report += length // 5
+                    f.write(chunk)
+            if process != length:
+                raise DownloadError("Incomplete download", url, process, length)
     except httpx.HTTPStatusError as e:
         raise DownloadError("HTTP error", url, 0, 0) from e
     except httpx.RequestError as e:
@@ -107,7 +118,7 @@ async def video_downloader(
 
     outfile = Path(outfile)
 
-    async with httpx.AsyncClient(headers=HEADERS) as session:
+    async with aiohttp.ClientSession() as session:
         tempdir = tempfile.TemporaryDirectory()
         tempdir_path = Path(tempdir.name)
 
