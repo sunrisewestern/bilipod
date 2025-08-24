@@ -1,6 +1,6 @@
 [project]
 name = "bilipod"
-version = "0.4.5"
+version = "0.4.6"
 description = "Make bilibili user or playlist into podcast"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -14,7 +14,6 @@ dependencies = [
   "tinydb==4.8.0",
   "schedule==1.2.2",
   "curl_cffi==0.10.0",
-  'httpx==0.26.0',
   'aiohttp==3.12.15'
 ]
 classifiers = [
