@@ -46,9 +46,12 @@ login:
 
 feeds:
   xiaoyuehankehan:
-    # user_id (uid) or playlist_id (sid):
-    uid: 23947287
-    # sid: 1733148
+    # choose one of the following two options
+    # user_id (uid) or playlist_id (sid)
+    uid: 23947287 # e.g. https://space.bilibili.com/23947287
+
+    # sid: 1733148 e.g. https://space.bilibili.com/1544008396/lists/1733148?type=season or https://space.bilibili.com/1724598/lists/224631?type=series
+    # playlist_type: season # season or series, default season, only apply to sid
 
     # The number of episodes to query each update (keep in mind, that this might cause IP ban), default 10
     page_size: 5
@@ -69,7 +72,7 @@ feeds:
     keep_last: 10 # the number of episodes to keep or "None" to keep all , default 10
 
     # Optional keywords
-    keyword: # Name match to serch for. If set, then only download matching episodes. e.g. "硬核狠人"
+    keyword: # Name match to serch for. If set, then only download matching episodes. e.g. "硬核狠人"; Not working with playlist; Sort is not supported with keyword
 
     # When set to true, podcasts indexers such as iTunes or Google Podcasts will not index this podcast, default true
     private_feed: True

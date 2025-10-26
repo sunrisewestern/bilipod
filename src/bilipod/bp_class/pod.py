@@ -13,7 +13,7 @@ class Pod:
         data_dir: Directory where podcast data is stored.
         base_url: Base URL of the podcast.
         uid: User ID of the podcast creator.
-        sid: Series ID of the podcast.
+        sid: Series ID of the podcast. Used for FavoriteLists. Use either uid or sid.
         title: Title of the podcast.
         description: Description of the podcast.
         cover_art: URL of the cover art.

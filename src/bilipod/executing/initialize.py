@@ -39,17 +39,19 @@ async def data_initialize(
             data_dir=config.storage.data_dir,
             base_url=base_url,
             uid=feed_config.uid,
+            sid=feed_config.sid,
             page_size=feed_config.page_size,
             keyword=feed_config.keyword,
         )
-
-        # get user info and video list
         pod_info = await get_pod_info(
-            uid=pod.uid,
+            uid=feed_config.uid,
+            sid=feed_config.sid,
+            playlist_type=feed_config.playlist_type,
             credential=credential,
-            page_size=pod.page_size,
+            page_size=feed_config.page_size,
             keyword=pod.keyword,
         )
+
         pod.update(**pod_info)
         pod.update(
             **{k: v for k, v in feed_config.to_dict().items() if v is not None}
