@@ -45,7 +45,7 @@ class LoginConfig:
 class FeedConfig:
     uid: Optional[str | int] = None
     sid: Optional[str | int] = None
-    playlist_type: Literal["season", "series"] = "season"
+    playlist_type: Literal["season", "series"] | None = None
     page_size: int = 10
     update_period: str = "12h"
     format: str = "audio"
