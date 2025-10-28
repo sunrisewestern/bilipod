@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Literal, Union
 
 import aiohttp
-import httpx
 from bilibili_api import (
     HEADERS,
     Credential,
@@ -44,10 +43,10 @@ async def download_url(session, url: str, out: Path, name: str):
                     f.write(chunk)
             if process != length:
                 raise DownloadError("Incomplete download", url, process, length)
-    except httpx.HTTPStatusError as e:
+    except aiohttp.ClientResponseError as e:
         raise DownloadError("HTTP error", url, 0, 0) from e
-    except httpx.RequestError as e:
-        raise DownloadError("Request error", url, 0, 0) from e
+    except aiohttp.ClientConnectorError as e:
+        raise DownloadError("Connection error", url, 0, 0) from e
 
 
 async def run_ffmpeg(args):

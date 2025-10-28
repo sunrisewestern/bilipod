@@ -29,9 +29,12 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> 
     try:
         updated_pod_info = await get_pod_info(
             uid=pod.uid,
+            sid=pod.sid,
+            playlist_type=pod.playlist_type,
+            page_size=pod.page_size,
+            keyword=pod.keyword,
+            playlist_sort=pod.playlist_sort,
             credential=credential,
-            page_size=Pod.page_size,
-            keyword=Pod.keyword,
         )
     except Exception as e:
         logger.error(f"Failed to update pod {pod.feed_id}.")
