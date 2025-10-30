@@ -43,6 +43,7 @@ class Pod:
     base_url: Optional[str] = None
     uid: Optional[int] = None
     sid: Optional[int] = None
+    playlist_type: Literal["season", "series"] = None
     title: Optional[str] = None
     description: Optional[str] = None
     cover_art: Optional[str] = None
