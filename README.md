@@ -1,6 +1,10 @@
-# bilipod: Turn Bilibili Users into Podcast Feeds
+# Bilipod: Turn [Bilibili](https://www.bilibili.com/) Channels or Playlists into Podcast Feeds
 
 English / [简体中文](./README_CN.md)
+
+<p align="center">
+  <img src="assets/icon.png" alt="Bilipod App Icon" width="128"/>
+</p>
 
 **Easily convert Bilibili user uploads into podcast feeds**
 
@@ -9,7 +13,7 @@ English / [简体中文](./README_CN.md)
 
 ## Features
 
-- **Generates podcast feeds** from Bilibili user uploads.
+- **Generates podcast feeds** from Bilibili user uploads or playlists.
 - **Flexible configuration:**
     - Choose video or audio-only feeds.
     - Select high or low quality output.
@@ -17,14 +21,14 @@ English / [简体中文](./README_CN.md)
     - Customize feed metadata (artwork, category, language, etc.).
 - **OPML export** for easy importing into podcast apps.
 - **Episode cleanup** to keep your feed tidy (keep last X episodes).
-- **Docker support** for simplified deployment (under development).
-- **Endorse the uploader** (like, coins, favorite; 点赞|投币|收藏|三连)
+- **Docker support** for simplified deployment.
+- **Endorse the uploader** (like, coins, favorite)
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Python 3.7+**
+- **Python 3.8+**
 - **Bilibili account** (and cookies - see below)
 
 ### Installation & Usage
