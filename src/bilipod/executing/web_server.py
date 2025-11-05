@@ -14,9 +14,18 @@ class ThreadedHTTPServer(ThreadingMixIn, socketserver.TCPServer):
 
 
 def run_web_server(server_config, data_dir: Path):
+    web_dir = Path(__file__).parent.parent / "web"
+    assets_dir = Path(__file__).parent.parent.parent / "assets"
+
     class Handler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=str(data_dir), **kwargs)
+            super().__init__(*args, directory=str(web_dir), **kwargs)
+
+        def translate_path(self, path):
+            if path.startswith("/assets/"):
+                path = path[len("/assets/") :]
+                return str(assets_dir / path)
+            return super().translate_path(path)
 
         def log_message(self, format, *args):
             logger.debug(f"[Web Server] {format % args}")
