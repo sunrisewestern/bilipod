@@ -18,6 +18,7 @@ async def download_episode(
     """
     Download an episode and update info of the episode object
     """
+    download_status = False
     try:
         v_obj = video.Video(episode.bvid, credential=credential)
         v_info = await v_obj.get_info()
@@ -38,6 +39,8 @@ async def download_episode(
                 audio_quality=episode.audio_quality,
                 credential=credential,
             )
+            download_status = True
+
         except DownloadError as e:
             logger.debug(f"Attempt to download {episode.bvid} failed: {e}")
             return episode
@@ -45,7 +48,9 @@ async def download_episode(
             logger.error(f"Failed to download {episode.bvid}: {e}")
             return episode
         except Exception as e:
-            logger.error(f"An unexpected error occurred when downloading {episode.bvid}: {e}")
+            logger.error(
+                f"An unexpected error occurred when downloading {episode.bvid}: {e}"
+            )
 
         try:
             await endorse(episode.endorse, v_obj, credential)
@@ -53,9 +58,10 @@ async def download_episode(
         except Exception as e:
             logger.error(f"Failed to endorse {episode.bvid}: {e}")
 
-    episode.status = "downloaded"  # Update status on successful download
-    episode.set_size()
-    logger.debug(f"Downloaded {episode.bvid} with size {episode.size}")
+    if download_status:
+        episode.status = "downloaded"  # Update status on successful download
+        episode.set_size()
+        logger.debug(f"Downloaded {episode.bvid} with size {episode.size}")
     episode.expand_description(v_info["dynamic"])
 
 
@@ -63,7 +69,10 @@ async def process_chunks(
     episodes: List[Episode], chunk_size, credential: Optional[Credential]
 ) -> List[Episode]:
     failed_downloads = []
-    chunks = [episodes[i : min(i + chunk_size, len(episodes))] for i in range(0, len(episodes), chunk_size)]
+    chunks = [
+        episodes[i : min(i + chunk_size, len(episodes))]
+        for i in range(0, len(episodes), chunk_size)
+    ]
     for chunk in chunks:
         results = await asyncio.gather(
             *[download_episode(episode, credential) for episode in chunk]
@@ -82,7 +91,7 @@ async def download_episodes(
     attempts = 0
 
     current_to_download = [
-        episode for episode in list(episode_list) if episode.status != "downloaded"
+        episode for episode in list(episode_list) if not episode.status == "downloaded"
     ]
 
     while attempts < max_attempts and current_to_download:
