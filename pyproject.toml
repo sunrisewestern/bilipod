@@ -36,7 +36,6 @@ requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["bilipod"]
 package-dir = {"" = "src"}
 include-package-data = true
 
