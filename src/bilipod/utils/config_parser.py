@@ -8,7 +8,7 @@ from .parse_netscape import parse_netscape_cookies
 
 @dataclass
 class ServerConfig:
-    port: int = 8080
+    port: int = 5728
     hostname: Optional[str] = None
     bind_address: str = "localhost"
     path: str = ""
@@ -96,7 +96,7 @@ class BiliPodConfig:
         # Parse and create ServerConfig
         server_data = config_data.get("server", {})
         server_config = ServerConfig(
-            port=server_data.get("port", 8080),
+            port=server_data.get("port", 5728),
             hostname=server_data.get("hostname"),
             bind_address=server_data.get("bind_address", "localhost"),
             path=server_data.get("path", ""),
@@ -114,18 +114,23 @@ class BiliPodConfig:
 
         # Parse and create TokenConfig
         token_data = config_data.get("token", {})
-        if token_data.get("cookie_file_path"):
-            token_data_update = parse_netscape_cookies(token_data["cookie_file_path"])
-            token_data.update(token_data_update)
+        if token_data is None:
+            token_config = None
+        else:
+            if token_data.get("cookie_file_path") is not None:
+                token_data_update = parse_netscape_cookies(
+                    token_data["cookie_file_path"]
+                )
+                token_data.update(token_data_update)
 
-        token_config = TokenConfig(
-            bili_jct=token_data["bili_jct"],
-            buvid3=token_data["buvid3"],
-            buvid4=token_data.get("buvid4", ""),
-            dedeuserid=token_data["dedeuserid"],
-            sessdata=token_data["sessdata"],
-            ac_time_value=token_data.get("ac_time_value", ""),
-        )
+            token_config = TokenConfig(
+                bili_jct=token_data["bili_jct"],
+                buvid3=token_data["buvid3"],
+                buvid4=token_data.get("buvid4", ""),
+                dedeuserid=token_data["dedeuserid"],
+                sessdata=token_data["sessdata"],
+                ac_time_value=token_data.get("ac_time_value", ""),
+            )
 
         # Parse and create login_config
         login_data = config_data.get("login", {})

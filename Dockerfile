@@ -19,5 +19,7 @@ RUN mkdir -p /app/data
 RUN mkdir -p /app/db
 
 EXPOSE 5728
+EXPOSE 41942
+EXPOSE 41943
 
 CMD ["bilipod", "--config=/app/config.yaml", "--db=/app/db/data.db"]

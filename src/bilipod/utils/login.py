@@ -1,12 +1,35 @@
+import asyncio
 import sys
 from typing import Literal
 
-from bilibili_api import Credential, Geetest, GeetestType, login_v2, sync, user
+from bilibili_api import Credential, Geetest, GeetestType, login_v2, user
+from bilibili_api.exceptions import GeetestException
+from bilibili_api.utils.geetest import ServerThread
 
 from .bp_log import Logger
 from .config_parser import BiliPodConfig
 
 logger = Logger().get_logger()
+
+GEETEST_PORT_LOGIN = 41942
+GEETEST_PORT_VERIFY = 41943
+
+
+class FixedPortGeetest(Geetest):
+    def __init__(self, port: int = 0):
+        super().__init__()
+        self._port = port
+
+    def start_geetest_server(self) -> None:
+        """
+        开启本地极验验证码服务
+        """
+        if self.thread is not None:
+            raise GeetestException("验证码服务已创建。")
+        self.thread = ServerThread(self._geetest_urlhandler, "0.0.0.0", self._port)
+        self.thread.start()
+        while not self.thread.error and not self.thread.serving:
+            pass
 
 
 async def password_login(
@@ -16,12 +39,15 @@ async def password_login(
     phone_number=None,
     country_code="+86",
 ) -> Credential:
-    gee = Geetest()
+    gee = FixedPortGeetest(port=GEETEST_PORT_LOGIN)
     await gee.generate_test()
     gee.start_geetest_server()
-    print(gee.get_geetest_server_url())
+    url = gee.get_geetest_server_url()
+    print(f"Geetest Server started at: {url}")
+    print(f"If you are running locally, try: http://127.0.0.1:{GEETEST_PORT_LOGIN}/")
+    print(f"If you are running remotely, try: http://<YOUR_IP>:{GEETEST_PORT_LOGIN}/")
     while not gee.has_done():
-        pass
+        await asyncio.sleep(1)
     gee.close_geetest_server()
     print("result:", gee.get_result())
 
@@ -43,12 +69,15 @@ async def password_login(
 
     # Security verification
     if isinstance(cred, login_v2.LoginCheck):
-        gee = Geetest()
+        gee = FixedPortGeetest(port=GEETEST_PORT_VERIFY)
         await gee.generate_test(type_=GeetestType.VERIFY)
         gee.start_geetest_server()
-        print(gee.get_geetest_server_url())
+        url = gee.get_geetest_server_url()
+        print(f"Geetest Verification Server started at: {url}")
+        print(f"If you are running locally, try: http://127.0.0.1:{GEETEST_PORT_VERIFY}/")
+        print(f"If you are running remotely, try: http://<YOUR_IP>:{GEETEST_PORT_VERIFY}/")
         while not gee.has_done():
-            pass
+            await asyncio.sleep(1)
         gee.close_geetest_server()
         print("result:", gee.get_result())
         await cred.send_sms(gee)
@@ -60,12 +89,7 @@ async def password_login(
 
 
 async def get_credential(config: BiliPodConfig) -> Credential:
-    if (
-        config.token.bili_jct
-        and config.token.buvid3
-        and config.token.dedeuserid
-        and config.token.sessdata
-    ):
+    if config.token:
         if not config.token.ac_time_value:
             logger.warning("ac_time_value is not set. It may cause some issues.")
 

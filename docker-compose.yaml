@@ -6,6 +6,8 @@ services:
     container_name: bilipod
     ports:
       - "5728:5728"
+      - "41942:41942" # geetest login
+      - "41943:41943" # geetest verify
     volumes:
       - ./config_docker.yaml:/app/config.yaml
       - ./data:/app/data
