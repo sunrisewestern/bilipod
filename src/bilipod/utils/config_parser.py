@@ -81,6 +81,15 @@ class LogConfig:
 
 
 @dataclass
+class SponsorBlockConfig:
+    enabled: bool = True
+    api_url: str = "https://bsbsb.top/api"
+    categories: Sequence[str] = ("sponsor",)
+    origin: str = "chrome-extension://eaoelafamejbnggahofapllmfhlhajdd"
+    extension_version: str = "0.5.0"
+
+
+@dataclass
 class BiliPodConfig:
     server: ServerConfig
     storage: StorageConfig
@@ -88,6 +97,7 @@ class BiliPodConfig:
     login: LoginConfig
     feeds: Dict[str, FeedConfig]
     log: LogConfig
+    sponsorblock: SponsorBlockConfig
 
     @staticmethod
     def from_yaml(config_file: str) -> "BiliPodConfig":
@@ -147,6 +157,9 @@ class BiliPodConfig:
         log_data = config_data.get("log", None)
         log_config = LogConfig(**log_data) if log_data else None
 
+        sponsorblock_data = config_data.get("sponsorblock", {})
+        sponsorblock_config = SponsorBlockConfig(**sponsorblock_data)
+
         return BiliPodConfig(
             server=server_config,
             storage=storage_config,
@@ -154,6 +167,7 @@ class BiliPodConfig:
             login=login_config,
             feeds=feed_configs,
             log=log_config,
+            sponsorblock=sponsorblock_config,
         )
 
 

@@ -116,3 +116,14 @@ log:
   max_age : 30 # days
   compress : true
   debug : false
+
+# Optional SponsorBlock config. When enabled, Bilipod will query
+# https://github.com/hanydd/BilibiliSponsorBlock/wiki/API and remove
+# matching segments during media conversion.
+sponsorblock:
+  enabled: true
+  api_url: "https://bsbsb.top/api"
+  categories:
+    - sponsor
+  origin: "chrome-extension://eaoelafamejbnggahofapllmfhlhajdd"
+  extension_version: "0.5.0"

@@ -11,6 +11,7 @@ from ..downloader import download_episodes
 from ..feed import generate_feed_xml, generate_opml  # noqa: F401
 from ..utils.biliuser import get_episode_list, get_pod_info
 from ..utils.bp_log import Logger
+from ..utils.config_parser import SponsorBlockConfig
 from ..utils.db_query import query_episode
 from .clean import clean_untracked_episodes
 
@@ -56,7 +57,10 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> 
 
 
 async def update_episodes(
-    pod_tbl: table.Table, episode_tbl: table.Table, credential: Credential
+    pod_tbl: table.Table,
+    episode_tbl: table.Table,
+    credential: Credential,
+    sponsorblock: SponsorBlockConfig,
 ) -> None:
     while True:
         logger.debug("Waiting for update signal...")
@@ -91,7 +95,12 @@ async def update_episodes(
         if episode_to_update:
             episode_to_update = list(set(episode_to_update))
             logger.debug(f"Episodes to update: {episode_to_update}")
-            await download_episodes(episode_to_update, credential=credential, max_attempts=10)
+            await download_episodes(
+                episode_to_update,
+                credential=credential,
+                sponsorblock=sponsorblock,
+                max_attempts=10,
+            )
 
             # update episode list in episode_tbl
             episode_tbl.insert_multiple(
