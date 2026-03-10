@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from bilibili_api import Credential, channel_series, user
+from bilibili_api import Credential, channel_series, favorite_list, user
 
 from ..bp_class import Episode, Pod
 from .bp_log import Logger
@@ -16,8 +16,9 @@ def s2ms(seconds):
 
 
 async def get_pod_info(
-    uid: int,
-    sid: int,
+    uid: Optional[int],
+    sid: Optional[int],
+    fid: Optional[int],
     playlist_type: Literal["season", "series"] = "season",
     page_number: int = 1,
     page_size: int = 5,
@@ -34,7 +35,7 @@ async def get_pod_info(
             playlist_sort=playlist_sort,
             credential=credential,
         )
-    else:
+    elif sid:
         return await get_series_info(
             sid=sid,
             playlist_type=playlist_type,
@@ -43,6 +44,15 @@ async def get_pod_info(
             playlist_sort=playlist_sort,
             credential=credential,
         )
+    elif fid:
+        return await get_favorite_list_info(
+            fid=fid,
+            page_size=page_size,
+            keyword=keyword,
+            credential=credential,
+        )
+    else:
+        raise ValueError("One of uid, sid, or fid must be provided.")
 
 
 async def get_user_info(
@@ -169,6 +179,73 @@ async def get_series_info(
             "link": f"https://space.bilibili.com/{info['mid']}/lists/{sid}?type={playlist_type}",
             "episodes": episodes_info,
         }
+
+
+async def get_favorite_list_info(
+    fid: int,
+    page_size: int = 5,
+    keyword: Optional[str] = None,
+    credential: Credential = None,
+) -> dict:
+    page = 1
+    episodes_info = []
+    response = {}
+
+    while len(episodes_info) < page_size:
+        response = await favorite_list.get_video_favorite_list_content(
+            media_id=fid,
+            page=page,
+            keyword=keyword,
+            order=favorite_list.FavoriteListContentOrder.MTIME,
+            credential=credential,
+        )
+        medias = response.get("medias") or []
+        if not medias:
+            break
+
+        for media in medias:
+            bvid = media.get("bv_id") or media.get("bvid")
+            if not bvid:
+                continue
+
+            duration = media.get("duration")
+            episodes_info.append(
+                {
+                    "bvid": bvid,
+                    "title": media.get("title", "Unknown"),
+                    "description": media.get("intro", ""),
+                    "duration": (
+                        s2ms(duration) if isinstance(duration, int) else duration
+                    ),
+                    "image": media.get("cover", ""),
+                    "pubdate": media.get("pubtime"),
+                }
+            )
+
+            if len(episodes_info) >= page_size:
+                break
+
+        if not response.get("has_more"):
+            break
+        page += 1
+
+    info = response.get("info", {})
+    upper = info.get("upper", {})
+
+    return {
+        "fid": fid,
+        "title": info.get("title", f"Favorite List {fid}"),
+        "description": info.get("intro", ""),
+        "cover_art": info.get("cover")
+        or (episodes_info[0]["image"] if episodes_info else ""),
+        "author": upper.get("name", ""),
+        "link": (
+            f"https://space.bilibili.com/{upper['mid']}/favlist?fid={fid}"
+            if upper.get("mid")
+            else f"https://space.bilibili.com/favlist?fid={fid}"
+        ),
+        "episodes": episodes_info[:page_size],
+    }
 
 
 def get_episode_list(pod: Pod) -> List[Episode]:

@@ -46,12 +46,15 @@ login:
 
 feeds:
   xiaoyuehankehan:
-    # choose one of the following two options
-    # user_id (uid) or playlist_id (sid)
+    # choose one of the following three options:
+    # uploader user_id (uid), playlist_id (sid), or favorite-list fid
     uid: 23947287 # e.g. https://space.bilibili.com/23947287
 
     # sid: 1733148 e.g. https://space.bilibili.com/1544008396/lists/1733148?type=season or https://space.bilibili.com/1724598/lists/224631?type=series
     # playlist_type: season # season or series, default season, only apply to sid
+
+    # fid: 718927623 # favorite list, use the number from favlist?fid=718927623
+    # Example favorite-list URL: https://space.bilibili.com/175404123/favlist?fid=718927623
 
     # The number of episodes to query each update (keep in mind, that this might cause IP ban), default 10
     page_size: 5
@@ -77,8 +80,8 @@ feeds:
     # When set to true, podcasts indexers such as iTunes or Google Podcasts will not index this podcast, default true
     private_feed: True
 
-    # Option to endorse the video, default None, or list of ['like','coin|{number(1 or 2)}','favorite|{media_id}'], or “triple”, for media_id, refer to https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/fav/info.md
-    endorse: # ['like','coin|2','favorite|{media_id}']
+    # Option to endorse the video, default None, or list of ['like','coin|{number(1 or 2)}','favorite|{fid}'], or “triple”, for fid, refer to https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/fav/info.md
+    endorse: # ['like','coin|2','favorite|{fid}']
 
     # Optional feed customizations
     title: # "小约翰可汗-硬核狠人"
@@ -91,6 +94,19 @@ feeds:
     lang: # "en"
     # optional: this will override the default link (usually the URL address) in the generated RSS feed with another link
     link: # "https://example.org"
+
+  favorite_list_example:
+    # Favorite-list feeds use fid instead of uid/sid.
+    fid: 718927623 # from https://space.bilibili.com/175404123/favlist?fid=718927623
+    page_size: 10
+    update_period: 6h
+    format: audio
+    quality: low
+    opml: True
+    keep_last: 10
+    private_feed: True
+    title: "Favorite List Example"
+    description: "Example feed generated from a Bilibili favorite list"
 
 
 # Optional log config. If not specified logs to the stdout

@@ -13,7 +13,8 @@ class Pod:
         data_dir: Directory where podcast data is stored.
         base_url: Base URL of the podcast.
         uid: User ID of the podcast creator.
-        sid: Series ID of the podcast. Used for FavoriteLists. Use either uid or sid.
+        sid: Series ID of the podcast. Use one of uid, sid, or fid.
+        fid: Favorite-list ID used for favorite-based feeds.
         title: Title of the podcast.
         description: Description of the podcast.
         cover_art: URL of the cover art.
@@ -43,6 +44,7 @@ class Pod:
     base_url: Optional[str] = None
     uid: Optional[int] = None
     sid: Optional[int] = None
+    fid: Optional[int] = None
     playlist_type: Literal["season", "series"] = None
     title: Optional[str] = None
     description: Optional[str] = None
