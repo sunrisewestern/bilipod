@@ -30,6 +30,7 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> 
         updated_pod_info = await get_pod_info(
             uid=pod.uid,
             sid=pod.sid,
+            media_id=pod.media_id,
             playlist_type=pod.playlist_type,
             page_size=pod.page_size,
             keyword=pod.keyword,

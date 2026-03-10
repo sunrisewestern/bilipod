@@ -40,12 +40,14 @@ async def data_initialize(
             base_url=base_url,
             uid=feed_config.uid,
             sid=feed_config.sid,
+            media_id=feed_config.media_id,
             page_size=feed_config.page_size,
             keyword=feed_config.keyword,
         )
         pod_info = await get_pod_info(
             uid=feed_config.uid,
             sid=feed_config.sid,
+            media_id=feed_config.media_id,
             playlist_type=feed_config.playlist_type,
             credential=credential,
             page_size=feed_config.page_size,
