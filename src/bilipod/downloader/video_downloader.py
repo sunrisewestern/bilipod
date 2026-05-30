@@ -1,6 +1,7 @@
 import asyncio
 import shutil
 import tempfile
+from collections.abc import MutableMapping
 from pathlib import Path
 from typing import Literal, Union
 
@@ -20,6 +21,28 @@ FFMPEG_PATH = "ffmpeg"
 select_client("aiohttp")
 
 logger = Logger().get_logger()
+
+
+def normalize_video_codecs(v_url_data: MutableMapping) -> None:
+    dash = v_url_data.get("dash")
+    if not isinstance(dash, MutableMapping):
+        return
+
+    for stream in dash.get("video") or []:
+        if not isinstance(stream, MutableMapping):
+            continue
+
+        codecs = stream.get("codecs")
+        if not isinstance(codecs, str):
+            continue
+
+        codec_name = codecs.split(".", 1)[0].lower()
+        if (
+            codec_name in {"hvc1", "hev1"}
+            and video.VideoCodecs.HEV.value not in codecs
+        ):
+            # bilibili_api matches HEVC by "hev", but Bilibili may return hvc1/hev1.
+            stream["codecs"] = f"{video.VideoCodecs.HEV.value}.{codecs}"
 
 
 async def download_url(session, url: str, out: Path, name: str):
@@ -109,6 +132,7 @@ async def video_downloader(
         logger.debug(f"Failed to get video {name}, skipping.")
         return None
 
+    normalize_video_codecs(v_url_data)
     v_detecter = video.VideoDownloadURLDataDetecter(v_url_data)
     streams = v_detecter.detect_best_streams(
         video_max_quality=getattr(video.VideoQuality, f"_{video_quality}"),
