@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f6f7f9;
+      color: #1f2933;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(92vw, 420px);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 18px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      border: 1px solid #b8c0cc;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 18px;
+      letter-spacing: 0;
+      background: #fff;
+      color: #111827;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      background: #2563eb;
+      cursor: pointer;
+    }
+
+    input:disabled {
+      background: #eef1f5;
+      color: #6b7280;
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: default;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>{{ title }}</h1>
+    <p id="sms-status" data-health-src="{{ health_src }}" aria-live="polite">
+      {{ message }}
+    </p>
+    <form method="post" action="{{ form_action }}">
+      <input
+        name="code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        autofocus
+        required
+      >
+      <button type="submit" {{ submit_button_attr }}>Submit</button>
+    </form>
+  </main>
+  <script>
+    const statusElement = document.getElementById("sms-status");
+    const healthSrc = statusElement ? statusElement.dataset.healthSrc : "";
+    const form = document.querySelector("form");
+    const codeInput = document.querySelector("input[name='code']");
+    const submitButton = document.querySelector("button[type='submit']");
+
+    if (submitButton && submitButton.disabled && codeInput) {
+      codeInput.disabled = true;
+    }
+
+    if (form && submitButton) {
+      form.addEventListener("submit", () => {
+        submitButton.disabled = true;
+      });
+    }
+
+    async function refreshStatus() {
+      if (!healthSrc || !statusElement) {
+        return;
+      }
+
+      try {
+        const response = await fetch(healthSrc, { cache: "no-store" });
+        if (response.ok) {
+          statusElement.textContent = await response.text();
+        }
+      } catch {
+        // Keep the current status visible if the helper server is shutting down.
+      }
+    }
+
+    refreshStatus();
+    window.setInterval(refreshStatus, 2000);
+  </script>
+</body>
+
+</html>

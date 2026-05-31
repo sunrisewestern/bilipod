@@ -318,6 +318,17 @@
       border-radius: 12px;
     }
 
+    .auth-status-banner {
+      border-radius: 8px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .auth-status-banner .btn {
+      white-space: nowrap;
+    }
+
     /* Feed list styling */
     .feed-list-item {
       cursor: pointer;
@@ -364,6 +375,16 @@
       </div>
     </div>
   </nav>
+
+  <div class="container mt-3">
+    <div id="auth-status-banner" class="alert auth-status-banner d-none" role="status">
+      <div>
+        <i id="auth-status-icon" class="bi bi-info-circle me-2"></i>
+        <span id="auth-status-message"></span>
+      </div>
+      <a id="auth-status-action" class="btn btn-sm d-none" target="_blank" rel="noopener"></a>
+    </div>
+  </div>
 
   <!-- Main Content -->
   <div class="container mt-4">
@@ -677,6 +698,59 @@
     let allFeeds = []; // New global variable to store feed data
     let currentFilterFeedUrl = null; // To keep track of the currently selected feed
 
+    async function loadAuthStatus() {
+      try {
+        const response = await fetch('auth/status', { cache: 'no-store' });
+        if (!response.ok) {
+          return;
+        }
+        renderAuthStatus(await response.json());
+      } catch (error) {
+        console.error('Error loading auth status:', error);
+      }
+    }
+
+    function renderAuthStatus(status) {
+      const banner = document.getElementById('auth-status-banner');
+      const icon = document.getElementById('auth-status-icon');
+      const message = document.getElementById('auth-status-message');
+      const action = document.getElementById('auth-status-action');
+
+      if (!status || status.state === 'idle' || !status.message) {
+        banner.className = 'alert auth-status-banner d-none';
+        action.classList.add('d-none');
+        return;
+      }
+
+      const stateClasses = {
+        action_required: ['alert-warning', 'bi-box-arrow-up-right', 'btn-warning'],
+        working: ['alert-info', 'bi-hourglass-split', 'btn-info'],
+        complete: ['alert-success', 'bi-check-circle', 'btn-success'],
+        error: ['alert-danger', 'bi-exclamation-triangle', 'btn-danger']
+      };
+      const [alertClass, iconClass, buttonClass] =
+        stateClasses[status.state] || stateClasses.working;
+
+      banner.className = `alert auth-status-banner d-flex ${alertClass}`;
+      icon.className = `bi ${iconClass} me-2`;
+      message.textContent = status.message;
+
+      if (status.action_url) {
+        action.href = status.action_url;
+        action.textContent = status.action_label || 'Open';
+        action.className = `btn btn-sm ${buttonClass}`;
+      } else {
+        action.removeAttribute('href');
+        action.textContent = '';
+        action.className = 'btn btn-sm d-none';
+      }
+    }
+
+    function startAuthStatusPolling() {
+      loadAuthStatus();
+      window.setInterval(loadAuthStatus, 2000);
+    }
+
     /**
      * Loads episodes and displays them in the UI
      */
@@ -938,6 +1012,7 @@
 
     // Load episodes when page loads
     document.addEventListener('DOMContentLoaded', function () {
+      startAuthStatusPolling();
       loadEpisodes();
     });
   </script>

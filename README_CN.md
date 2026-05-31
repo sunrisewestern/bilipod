@@ -53,14 +53,23 @@
    pip install .
    ```
 
-4. **获取你的 Bilibili cookies：**
+4. **获取你的 Bilibili cookies 或配置登录：**
 
-   - 按照[bilibili-api 文档](https://nemo2011.github.io/bilibili-api/#/get-credential)中的说明操作。
+   - 按照[bilibili-api 文档](https://nemo2011.github.io/bilibili-api/#/get-credential)中的说明操作，或在 `config.yaml` 中将 `login.method` 设置为 `password`、`sms` 或 `qrcode`。
+   - Docker 登录时，请发布或反向代理 `41942`（Geetest 登录）、`41943`（Geetest 验证）和 `41944`（二维码登录）。
 
 5. **配置 `config.yaml`：**
 
    - 提供你的 Bilibili cookies。
    - 自定义订阅源设置（输出格式、质量、过滤器等）。
+   - 字符串值可以用 `$env{VAR_NAME}` 引用环境变量：
+
+     ```yaml
+     login:
+       method: password
+       username: $env{BILIPOD_USERNAME}
+       password: $env{BILIPOD_PASSWORD}
+     ```
 
 6. **创建你的播客订阅源：**
 
@@ -92,6 +101,9 @@ Docker 镜像可在 Docker Hub 上找到，名称为 `sunrisewestern/bilipod`。
        -v $(pwd)/config.yaml:/app/config.yaml \
        -v $(pwd)/data:/app/data \
        -p 5728:5728 \
+       -p 41942:41942 \
+       -p 41943:41943 \
+       -p 41944:41944 \
        sunrisewestern/bilipod:latest
    ```
 
@@ -111,6 +123,9 @@ services:
       - ./data:/app/data
     ports:
       - "5728:5728"
+      - "41942:41942"
+      - "41943:41943"
+      - "41944:41944"
 ```
 
 1. **使用 Docker Compose 运行**：
@@ -128,6 +143,23 @@ services:
    ```bash
    docker-compose down
    ```
+
+### 反向代理登录辅助页面
+
+如果通过 Nginx 路径代理暴露 Bilipod，请显式设置公开访问的登录辅助页面 URL：
+
+```yaml
+login:
+  geetest_login_url: https://example.com/login
+  geetest_verify_url: https://example.com/verify
+  qrcode_url: https://example.com/qrcode
+```
+
+完成 Geetest 后，如果 Bilibili 发送了短信验证码，请再次打开相同的 `/login/` 或 `/verify/` URL，并在网页中提交短信验证码。
+Bilipod 主页面也会轮询 `/auth/status`，并在认证等待操作时显示可点击的登录提示。
+如果主页面公开访问，请在 Nginx 中用 Basic Auth 或 IP allowlist 保护 `/auth/status`、`/login/`、`/verify/` 和 `/qrcode/`。
+
+Nginx 示例见 `docs/nginx_bilipod_example.conf`。
 
 ## 文档
 
