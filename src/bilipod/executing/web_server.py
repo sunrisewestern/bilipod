@@ -48,6 +48,7 @@ def run_web_server(server_config, data_dir: Path):
 
                     self.send_response(200)
                     self.send_header("Content-type", "text/html; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
                     self.end_headers()
                     self.wfile.write(output.encode("utf-8"))
                 except Exception as e:
@@ -71,6 +72,7 @@ def run_web_server(server_config, data_dir: Path):
                             self.send_header(
                                 "Content-type", "application/xml; charset=utf-8"
                             )
+                            self.send_header("Cache-Control", "no-store")
                             self.end_headers()
                             self.wfile.write(f.read())
                     except Exception as e:
@@ -89,6 +91,7 @@ def run_web_server(server_config, data_dir: Path):
                             self.send_header(
                                 "Content-type", "application/xml; charset=utf-8"
                             )
+                            self.send_header("Cache-Control", "no-store")
                             self.end_headers()
                             self.wfile.write(f.read())
                     except Exception as e:

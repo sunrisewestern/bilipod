@@ -3,11 +3,12 @@ Make a podcast XML feed with feedgen
 """
 
 import datetime
+import re
+from pathlib import Path
 
 import tzlocal
 from feedgen.feed import FeedGenerator
 from tinydb import table
-import re
 
 from ..bp_class import Episode, Pod
 from ..utils.biliuser import get_episode_list
@@ -20,9 +21,22 @@ logger = Logger().get_logger()
 def sanitize_for_xml(text):
     """Removes characters illegal in XML documents."""
     if not isinstance(text, str):
-        return "" 
-    sanitized = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
+        return ""
+    sanitized = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)
     return sanitized
+
+
+def normalize_image_url(url):
+    if not isinstance(url, str):
+        return ""
+
+    image_url = url.strip()
+    if image_url.startswith("//"):
+        return f"https:{image_url}"
+    if image_url.lower().startswith("http://"):
+        return f"https://{image_url[7:]}"
+    return image_url
+
 
 def convert_timestamp_to_localtime(timestamp: int) -> str:
     local_timezone = tzlocal.get_localzone()
@@ -45,18 +59,29 @@ def generate_feed_xml(
     }
     """
     logger.debug(f"Generating feed for {pod.feed_id}")
-    
+
     fg = FeedGenerator()
     fg.load_extension("podcast", atom=False, rss=True)
-    fg.title(sanitize_for_xml(f"{pod.title}[{pod.keyword}]" if pod.keyword else pod.title))
+    fg.title(
+        sanitize_for_xml(f"{pod.title}[{pod.keyword}]" if pod.keyword else pod.title)
+    )
     if pod.description:
         fg.description(sanitize_for_xml(pod.description))
     else:
         fg.description(sanitize_for_xml(pod.title))
     fg.link({"href": sanitize_for_xml(pod.link), "rel": "alternate"})
-    fg.image(url=sanitize_for_xml(pod.cover_art), title=sanitize_for_xml(pod.title), link=sanitize_for_xml(pod.link))
+    fg.image(
+        url=sanitize_for_xml(normalize_image_url(pod.cover_art)),
+        title=sanitize_for_xml(pod.title),
+        link=sanitize_for_xml(pod.link),
+    )
 
-    fg.podcast.itunes_category(sanitize_for_xml(pod.category), [sanitize_for_xml(sub) for sub in pod.subcategories] if pod.subcategories else [])
+    fg.podcast.itunes_category(
+        sanitize_for_xml(pod.category),
+        [sanitize_for_xml(sub) for sub in pod.subcategories]
+        if pod.subcategories
+        else [],
+    )
     fg.podcast.itunes_author(sanitize_for_xml(pod.author))
 
     matched_episodes: list[Episode] = []
@@ -81,25 +106,31 @@ def generate_feed_xml(
         fe.description(sanitize_for_xml(episode.description))
         fe.guid(sanitize_for_xml(episode.bvid), permalink=False)
         fe.pubDate(pubdate)
-        fe.enclosure(url=sanitize_for_xml(episode.url), length=episode.size, type=sanitize_for_xml(episode.type))
+        fe.enclosure(
+            url=sanitize_for_xml(episode.url),
+            length=episode.size,
+            type=sanitize_for_xml(episode.type),
+        )
 
         fe.podcast.itunes_duration(episode.duration)
-        fe.podcast.itunes_image(sanitize_for_xml(episode.image))
+        fe.podcast.itunes_image(sanitize_for_xml(normalize_image_url(episode.image)))
         fe.podcast.itunes_explicit(episode.explicit)
 
     feed_name = f"{pod.feed_id.replace('feed.', '', 1)}"
 
     try:
         fg.rss_file(
-            filename=str(pod.data_dir / f"{feed_name}.xml"),
+            filename=str(Path(pod.data_dir) / f"{feed_name}.xml"),
             pretty=True,
         )
     except Exception as e:
         logger.error(f"Failed to generate feed for {pod.feed_id}: {e}")
         # print all fg attributes to debug
         logger.debug(fg.__dict__)
-        logger.debug(fg.rss_str(pretty=True))
-        logger.debug(fg.atom_str(pretty=True))
+        try:
+            logger.debug(fg.rss_str(pretty=True))
+        except Exception as debug_error:
+            logger.debug(f"Failed to render RSS debug output: {debug_error}")
         return
     else:
         logger.info(f"Generated feed for {feed_name}")

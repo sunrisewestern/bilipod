@@ -1,6 +1,6 @@
 import pytest
 
-from src.bilipod.utils.config_parser import BiliPodConfig
+from src.bilipod.utils.config_parser import BiliPodConfig, load_feed_configs
 
 
 def test_blank_token_config_uses_login_config(tmp_path):
@@ -118,3 +118,24 @@ feeds: {}
     assert config.login.phone_number is None
     assert config.login.country_code == "+86"
     assert config.login.geetest_login_url == "https://example.com/login"
+
+
+def test_load_feed_configs_ignores_unrelated_invalid_config(tmp_path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+token:
+  bili_jct: token
+feeds:
+  feed1:
+    uid: 123
+    update_period: 5m
+""",
+        encoding="utf-8",
+    )
+
+    feeds = load_feed_configs(str(config_file))
+
+    assert list(feeds) == ["feed1"]
+    assert feeds["feed1"].uid == 123
+    assert feeds["feed1"].update_period == "5m"

@@ -131,18 +131,20 @@
 
     /* Episode images */
     .episode-image {
-      width: 100px;
-      height: 100px;
+      width: 128px;
+      aspect-ratio: 16 / 9;
+      height: auto;
       object-fit: cover;
-      border-radius: 12px;
+      border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      background: #F2F2F7;
     }
 
     .episode-image-placeholder {
-      width: 100px;
-      height: 100px;
+      width: 128px;
+      aspect-ratio: 16 / 9;
       background: linear-gradient(135deg, #F2F2F7, #E5E5EA);
-      border-radius: 12px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -450,7 +452,7 @@
     async function loadOPMLFromURL(url) {
       try {
         // Fetch the OPML XML from the URL
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: 'no-store' });
 
         if (!response.ok) {
           throw new Error(`Error loading OPML. HTTP status: ${response.status}`);
@@ -511,6 +513,53 @@
       return result;
     }
 
+    function normalizeImageUrl(url) {
+      if (!url) {
+        return '';
+      }
+      const imageUrl = url.trim();
+      if (imageUrl.startsWith('//')) {
+        return `https:${imageUrl}`;
+      }
+      if (imageUrl.toLowerCase().startsWith('http://')) {
+        return `https://${imageUrl.substring(7)}`;
+      }
+      return imageUrl;
+    }
+
+    function findDirectChildByName(parent, qualifiedName) {
+      const [prefix, localName] = qualifiedName.toLowerCase().split(':');
+      return Array.from(parent.children).find(child => {
+        const tagName = child.tagName.toLowerCase();
+        if (tagName === qualifiedName.toLowerCase()) {
+          return true;
+        }
+
+        if (localName) {
+          return child.localName?.toLowerCase() === localName &&
+            child.prefix?.toLowerCase() === prefix;
+        }
+
+        return child.localName?.toLowerCase() === prefix && !child.prefix;
+      });
+    }
+
+    function getEpisodeImageUrl(item, channel) {
+      const itemImage = findDirectChildByName(item, 'itunes:image');
+      const channelItunesImage = findDirectChildByName(channel, 'itunes:image');
+      const channelImage = findDirectChildByName(channel, 'image');
+      const channelImageUrl = channelImage ?
+        findDirectChildByName(channelImage, 'url')?.textContent :
+        '';
+
+      return normalizeImageUrl(
+        itemImage?.getAttribute('href') ||
+        channelItunesImage?.getAttribute('href') ||
+        channelImageUrl ||
+        ''
+      );
+    }
+
     /**
      * Recursively parses outline elements
      * @param {NodeList} outlines - The outline elements to parse
@@ -546,7 +595,7 @@
      */
     async function fetchEpisodesFromFeed(feedUrl) {
       try {
-        const response = await fetch(feedUrl);
+        const response = await fetch(feedUrl, { cache: 'no-store' });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -606,9 +655,7 @@
           author: item.querySelector('author')?.textContent ||
             item.querySelector('itunes\\:author, author[itunes]')?.textContent || '',
           duration: item.querySelector('itunes\\:duration, duration[itunes]')?.textContent || '',
-          image: item.querySelector('itunes\\:image')?.getAttribute('href') ||
-            channel.querySelector('itunes\\:image')?.getAttribute('href') ||
-            '',
+          image: getEpisodeImageUrl(item, channel),
           enclosureUrl: item.querySelector('enclosure')?.getAttribute('url') || '',
           enclosureType: item.querySelector('enclosure')?.getAttribute('type') || '',
           enclosureLength: item.querySelector('enclosure')?.getAttribute('length') || ''
@@ -694,9 +741,11 @@
     }
 
     // UI-specific functions
+    const FEED_REFRESH_INTERVAL_MS = 60000;
     let allEpisodes = [];
     let allFeeds = []; // New global variable to store feed data
     let currentFilterFeedUrl = null; // To keep track of the currently selected feed
+    let isLoadingEpisodes = false;
 
     async function loadAuthStatus() {
       try {
@@ -754,32 +803,36 @@
     /**
      * Loads episodes and displays them in the UI
      */
-    async function loadEpisodes() {
+    async function loadEpisodes(options = {}) {
+      if (isLoadingEpisodes) {
+        return;
+      }
+      isLoadingEpisodes = true;
+
+      const showLoading = options.showLoading !== false;
       const loading = document.getElementById('loading');
       const errorMessage = document.getElementById('error-message');
       const episodesContainer = document.getElementById('episodes-container');
-      const episodeCount = document.getElementById('episode-count');
 
-      // Show loading, hide others
-      loading.classList.remove('d-none');
+      if (showLoading) {
+        loading.classList.remove('d-none');
+        episodesContainer.classList.add('d-none');
+      }
       errorMessage.classList.add('d-none');
-      episodesContainer.classList.add('d-none');
 
       try {
         // The OPML file is now served from the root by the web server
         const opmlUrl = 'podcast.opml';
         const opmlData = await loadOPMLFromURL(opmlUrl);
+        const previousFilterFeedUrl = currentFilterFeedUrl;
 
         allFeeds = extractFeedUrls(opmlData.body); // Extract all feeds
         displayFeedList(allFeeds); // Display the list of feeds
 
         allEpisodes = await getAllEpisodesSortedByDate(opmlData);
 
-        // Update episode count
-        episodeCount.textContent = `${allEpisodes.length} episodes loaded`;
-
-        // Display all episodes initially
-        displayEpisodesInUI(allEpisodes);
+        const filterStillExists = allFeeds.some(feed => feed.xmlUrl === previousFilterFeedUrl);
+        filterEpisodesByFeed(filterStillExists ? previousFilterFeedUrl : null);
 
         // Hide loading, show episodes
         loading.classList.add('d-none');
@@ -788,10 +841,13 @@
       } catch (error) {
         console.error('Error loading episodes:', error);
 
-        // Show error
-        loading.classList.add('d-none');
-        document.getElementById('error-text').textContent = error.message;
-        errorMessage.classList.remove('d-none');
+        if (showLoading || allEpisodes.length === 0) {
+          loading.classList.add('d-none');
+          document.getElementById('error-text').textContent = error.message;
+          errorMessage.classList.remove('d-none');
+        }
+      } finally {
+        isLoadingEpisodes = false;
       }
     }
 
@@ -806,18 +862,20 @@
       // Add "Show All" option
       const showAllItem = document.createElement('button');
       showAllItem.id = 'show-all-feeds-button'; // Add a unique ID
-      showAllItem.className = 'list-group-item list-group-item-action feed-list-item active';
+      showAllItem.className = `list-group-item list-group-item-action feed-list-item${currentFilterFeedUrl === null ? ' active' : ''}`;
+      showAllItem.dataset.feedUrl = '';
       showAllItem.textContent = 'All Episodes';
       showAllItem.onclick = () => filterEpisodesByFeed(null);
       feedListContainer.appendChild(showAllItem);
 
       feeds.forEach(feed => {
         const feedItem = document.createElement('div'); // Use div to contain button and link
-        feedItem.className = 'list-group-item list-group-item-action feed-list-item d-flex justify-content-between align-items-center';
+        feedItem.className = `list-group-item list-group-item-action feed-list-item d-flex justify-content-between align-items-center${currentFilterFeedUrl === feed.xmlUrl ? ' active' : ''}`;
+        feedItem.dataset.feedUrl = feed.xmlUrl;
+        feedItem.onclick = () => filterEpisodesByFeed(feed.xmlUrl);
 
         const feedTitleSpan = document.createElement('span');
         feedTitleSpan.textContent = feed.title;
-        feedTitleSpan.onclick = () => filterEpisodesByFeed(feed.xmlUrl);
         feedTitleSpan.style.cursor = 'pointer'; // Make the title clickable for filtering
         feedItem.appendChild(feedTitleSpan);
 
@@ -848,11 +906,7 @@
       if (feedUrl) {
         filteredEpisodes = allEpisodes.filter(episode => episode.feedUrl === feedUrl);
         // Set active class for the selected feed
-        const selectedFeedItem = Array.from(feedListItems).find(item => {
-          // Find the div that contains the span with the click handler
-          const span = item.querySelector('span');
-          return span && span.onclick.toString().includes(`'${feedUrl}'`);
-        });
+        const selectedFeedItem = Array.from(feedListItems).find(item => item.dataset.feedUrl === feedUrl);
         if (selectedFeedItem) {
           selectedFeedItem.classList.add('active');
         }
@@ -863,6 +917,11 @@
       }
       displayEpisodesInUI(filteredEpisodes);
       document.getElementById('episode-count').textContent = `${filteredEpisodes.length} episodes loaded`;
+    }
+
+    function startFeedPolling() {
+      loadEpisodes();
+      window.setInterval(() => loadEpisodes({ showLoading: false }), FEED_REFRESH_INTERVAL_MS);
     }
 
     /**
@@ -959,7 +1018,7 @@
                                 </div>
                                 <div class="col-auto">
                                     ${episode.image ?
-            `<img src="${episode.image}" alt="${episode.title}" class="episode-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            `<img src="${episode.image}" alt="${episode.title}" class="episode-image" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                           <div class="episode-image-placeholder" style="display: none;">
                                               <i class="bi bi-image"></i>
                                           </div>` :
@@ -1013,7 +1072,7 @@
     // Load episodes when page loads
     document.addEventListener('DOMContentLoaded', function () {
       startAuthStatusPolling();
-      loadEpisodes();
+      startFeedPolling();
     });
   </script>
 </body>
