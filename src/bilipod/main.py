@@ -6,7 +6,6 @@ import threading
 import time
 from pathlib import Path
 
-import schedule
 from bilibili_api import request_settings
 from tinydb import TinyDB
 
@@ -15,9 +14,11 @@ from .executing import (
     data_initialize,
     run_web_server,
     schedule_job,
+    schedule_pod_update,
     update_episodes,
-    update_pod,
+    watch_feed_config_changes,
 )
+from .executing.scheduler import run_pending
 from .utils.bp_log import Logger
 from .utils.config_parser import BiliPodConfig
 from .utils.login import get_credential, update_credential
@@ -43,11 +44,11 @@ def signal_handler(signum, frame):
 
 def run_scheduler():
     while True:
-        schedule.run_pending()
+        run_pending()
         time.sleep(1)
 
 
-async def run_service(config: BiliPodConfig, db_path: str):
+async def run_service(config: BiliPodConfig, db_path: str, config_path: str):
 
     request_settings.set("impersonate", "chrome131")
 
@@ -107,16 +108,22 @@ async def run_service(config: BiliPodConfig, db_path: str):
     logger.info("Starting scheduler...")
     for pod_info in pod_tbl.all():
         pod = Pod.from_dict(pod_info)
-        schedule_job(
-            update_interval=pod_info["update_period"],
-            job=update_pod,
-            pod=pod,
-            pod_tbl=pod_tbl,
-            credential=credential,
-        )
+        schedule_pod_update(pod=pod, pod_tbl=pod_tbl, credential=credential)
 
     # update token every 6 hours
     schedule_job(update_interval="6h", job=update_credential, credential=credential)
+
+    asyncio.create_task(
+        watch_feed_config_changes(
+            config_path=config_path,
+            server_config=config.server,
+            data_dir=data_dir,
+            pod_tbl=pod_tbl,
+            episode_tbl=episode_tbl,
+            credential=credential,
+            initial_feeds=config.feeds,
+        )
+    )
 
     run_scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     run_scheduler_thread.start()
@@ -154,4 +161,4 @@ def main():
     # init logger
     Logger.setup(config=config.log)
 
-    asyncio.run(run_service(config, args.db))
+    asyncio.run(run_service(config, args.db, args.config))

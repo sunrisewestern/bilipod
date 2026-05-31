@@ -9,13 +9,29 @@ from tinydb import table
 path_to_src = Path(__file__).parent / "src"
 sys.path.insert(0, str(path_to_src))
 from src.bilipod.bp_class import Pod
-from src.bilipod.feed.podcast_rss import generate_feed_xml
+from src.bilipod.feed.podcast_rss import generate_feed_xml, normalize_image_url
+
+
+def test_normalize_image_url_uses_https():
+    assert (
+        normalize_image_url(
+            "http://i1.hdslb.com/bfs/archive/c7ba81f129517e9c749277ef745682dd6a494e57.jpg"
+        )
+        == "https://i1.hdslb.com/bfs/archive/c7ba81f129517e9c749277ef745682dd6a494e57.jpg"
+    )
+    assert normalize_image_url("//i1.hdslb.com/bfs/archive/test.jpg") == (
+        "https://i1.hdslb.com/bfs/archive/test.jpg"
+    )
+    assert normalize_image_url("https://example.com/image.jpg") == (
+        "https://example.com/image.jpg"
+    )
 
 
 class TestGenerateFeedXML(unittest.TestCase):
     def setUp(self):
         self.pod = Pod(
             feed_id="feed.test",
+            base_url="http://example.com",
             description="A test podcast",
             link="http://example.com",
             cover_art="http://example.com/image.jpg",
@@ -57,6 +73,7 @@ class TestGenerateFeedXML(unittest.TestCase):
         FeedGenerator.rss_str = MagicMock(return_value="<rss></rss>")
         FeedGenerator.rss_file = MagicMock()
 
+        self.pod.to_dict()
         generate_feed_xml(self.pod, self.episode_tbl)
 
         # Check if rss_file was called correctly

@@ -206,10 +206,7 @@ class BiliPodConfig:
         )
 
         # Parse and create FeedConfig for each feed
-        feeds_data = config_data.get("feeds", {})
-        feed_configs = {
-            feed_id: FeedConfig(**feed) for feed_id, feed in feeds_data.items()
-        }
+        feed_configs = parse_feed_configs(config_data)
 
         # Parse and create LogConfig if it exists
         log_data = config_data.get("log", None)
@@ -223,6 +220,20 @@ class BiliPodConfig:
             feeds=feed_configs,
             log=log_config,
         )
+
+
+def parse_feed_configs(config_data: dict) -> Dict[str, FeedConfig]:
+    feeds_data = config_data.get("feeds", {}) or {}
+    return {
+        feed_id: FeedConfig(**(feed or {})) for feed_id, feed in feeds_data.items()
+    }
+
+
+def load_feed_configs(config_file: str) -> Dict[str, FeedConfig]:
+    """Load only the feed section from a config file."""
+    with open(config_file, "r") as file:
+        config_data = _expand_env_values(yaml.safe_load(file) or {})
+    return parse_feed_configs(config_data)
 
 
 if __name__ == "__main__":

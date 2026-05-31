@@ -39,9 +39,9 @@ class Pod:
     """
 
     feed_id: str
+    base_url: str
     update_at: float = 0  # unix timestamp
     data_dir: Union[Path, str, None] = None
-    base_url: Optional[str] = None
     uid: Optional[int] = None
     sid: Optional[int] = None
     fid: Optional[int] = None
@@ -66,10 +66,13 @@ class Pod:
     endorse: Union[Literal["triple"], Sequence[str], None] = None
     keyword: Optional[str] = None
     episodes: Sequence[dict] = None
-    xml_url: Optional[str] = field(init=False)
+    xml_url: Optional[str] = field(default=None, init=False)
 
     @classmethod
     def from_dict(cls, data: dict):
+        if not data.get("base_url"):
+            raise ValueError("Pod base_url is required.")
+
         # Create a new instance without calling __post_init__
         obj = cls.__new__(cls)
         for field_name, field_type in cls.__annotations__.items():
@@ -77,17 +80,26 @@ class Pod:
             if isinstance(value, str) and "Path" in str(field_type):
                 value = Path(value)
             setattr(obj, field_name, value)
+        if obj.xml_url is None:
+            obj.xml_url = obj._build_xml_url()
         return obj
 
     def __post_init__(self):
-        if self.base_url is not None:
-            self.xml_url = f"{self.base_url}/{self.feed_id.replace('feed.', '', 1)}.xml"
+        if not self.base_url:
+            raise ValueError("Pod base_url is required.")
+
+        self.xml_url = self._build_xml_url()
         if self.data_dir is not None:
             self.data_dir = Path(self.data_dir)
 
+    def _build_xml_url(self) -> str:
+        feed_name = self.feed_id.replace("feed.", "", 1)
+        return f"{self.base_url.rstrip('/')}/{feed_name}.xml"
+
     def to_dict(self) -> dict:
-        self.data_dir = str(self.data_dir)
-        return asdict(self)
+        data = asdict(self)
+        data["data_dir"] = str(self.data_dir) if self.data_dir is not None else None
+        return data
 
     def update(self, **kwargs):
         for k, v in kwargs.items():

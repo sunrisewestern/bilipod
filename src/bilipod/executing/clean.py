@@ -32,12 +32,10 @@ def clean_untracked_episodes(
 
     for episode_info in episode_tbl.search(Query().tracking == False):  # noqa E712
         episode = Episode.from_dict(episode_info)
-        try:
+        if episode.location is not None and episode.location.exists():
             episode.clean()
-            episode_tbl.update({"status": "deleted"}, query_episode(episode))
-        except FileNotFoundError as e:
-            logger.debug(f"{episode.location} not found", e)
-            episode_tbl.update({"status": "deleted"}, query_episode(episode))
+            logger.debug(f"Deleted untracked episode: {episode.location}")
+        episode_tbl.remove(query_episode(episode))
 
     logger.debug("Cleaned untracked episodes.")
 

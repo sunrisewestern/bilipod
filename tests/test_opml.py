@@ -16,6 +16,8 @@ from src.bilipod.feed import generate_opml
     [
         [
             {
+                "feed_id": "feed.podcast1",
+                "base_url": "https://example.com",
                 "title": "Podcast 1",
                 "keyword": "Tech",
                 "description": "A podcast about technology.",
@@ -23,6 +25,8 @@ from src.bilipod.feed import generate_opml
                 "opml": True,
             },
             {
+                "feed_id": "feed.podcast2",
+                "base_url": "https://example.com",
                 "title": "Podcast 2",
                 "keyword": None,
                 "description": "Another great podcast.",
@@ -30,6 +34,8 @@ from src.bilipod.feed import generate_opml
                 "opml": True,
             },
             {
+                "feed_id": "feed.podcast3",
+                "base_url": "https://example.com",
                 "title": "Podcast 3",
                 "keyword": "News",
                 "description": "Stay informed with the latest news.",
