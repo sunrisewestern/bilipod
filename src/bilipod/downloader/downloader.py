@@ -48,9 +48,10 @@ async def download_episode(
             logger.error(f"Failed to download {episode.bvid}: {e}")
             return episode
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"An unexpected error occurred when downloading {episode.bvid}: {e}"
             )
+            return episode
 
         try:
             await endorse(episode.endorse, v_obj, credential)
