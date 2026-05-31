@@ -38,11 +38,38 @@ token:
   cookie_file_path: # optional, use this if you want to use exported Netscape cookies
 
 login:
-  # Optional. If you want to use bilibili account info (e.g. username, password, phone number) to login, you can set this field.
+  # Optional. Login method: password, sms, or qrcode. If unset, Bilipod chooses from the fields below or asks at startup.
+  method:
+
+  # Environment variables are supported in string values with $env{VAR_NAME}.
+  # Example: username: $env{BILIPOD_USERNAME}
+
+  # Password login.
   username:
   password:
+
+  # SMS login.
   phone_number:
   country_code: # default is +86
+
+  # Geetest CAPTCHA helper pages. Use fixed ports so Docker/reverse proxies can route them.
+  geetest_bind_address: "0.0.0.0"
+  geetest_login_port: 41942
+  geetest_verify_port: 41943
+  # Optional browser-facing URLs if these ports are reverse proxied.
+  # Set these explicitly when using path-based proxy routes.
+  # Example: https://example.com/login and https://example.com/verify
+  # These pages are also reused for SMS code input after Geetest completes.
+  # geetest_login_url:
+  # geetest_verify_url:
+
+  # QR code login helper page.
+  qrcode_bind_address: "0.0.0.0"
+  qrcode_port: 41944
+  # Optional browser-facing URL if this port is reverse proxied.
+  # Set this explicitly when using a path-based proxy route.
+  # Example: https://example.com/qrcode
+  # qrcode_url:
 
 feeds:
   xiaoyuehankehan:

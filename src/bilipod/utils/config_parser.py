@@ -1,9 +1,35 @@
+import os
+import re
 from dataclasses import asdict, dataclass
-from typing import Dict, Literal, Optional, Sequence, Union
+from typing import Any, Dict, Literal, Optional, Sequence, Union
 
 import yaml
 
 from .parse_netscape import parse_netscape_cookies
+
+ENV_VAR_PATTERN = re.compile(r"\$env\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def _has_config_value(value) -> bool:
+    return value is not None and str(value).strip() != ""
+
+
+def _optional_str(value) -> Optional[str]:
+    if not _has_config_value(value):
+        return None
+    return str(value)
+
+
+def _expand_env_values(value: Any) -> Any:
+    if isinstance(value, str):
+        return ENV_VAR_PATTERN.sub(
+            lambda match: os.environ.get(match.group(1), ""), value
+        )
+    if isinstance(value, dict):
+        return {key: _expand_env_values(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_expand_env_values(item) for item in value]
+    return value
 
 
 @dataclass
@@ -35,10 +61,19 @@ class TokenConfig:
 
 @dataclass
 class LoginConfig:
+    method: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
     phone_number: Optional[str] = None
     country_code: Optional[str] = "+86"
+    geetest_bind_address: str = "0.0.0.0"
+    geetest_login_port: int = 41942
+    geetest_verify_port: int = 41943
+    geetest_login_url: Optional[str] = None
+    geetest_verify_url: Optional[str] = None
+    qrcode_bind_address: str = "0.0.0.0"
+    qrcode_port: int = 41944
+    qrcode_url: Optional[str] = None
 
 
 @dataclass
@@ -83,15 +118,15 @@ class LogConfig:
 class BiliPodConfig:
     server: ServerConfig
     storage: StorageConfig
-    token: TokenConfig
+    token: Optional[TokenConfig]
     login: LoginConfig
     feeds: Dict[str, FeedConfig]
-    log: LogConfig
+    log: Optional[LogConfig]
 
     @staticmethod
     def from_yaml(config_file: str) -> "BiliPodConfig":
         with open(config_file, "r") as file:
-            config_data = yaml.safe_load(file)
+            config_data = _expand_env_values(yaml.safe_load(file) or {})
 
         # Parse and create ServerConfig
         server_data = config_data.get("server", {})
@@ -113,32 +148,60 @@ class BiliPodConfig:
         )
 
         # Parse and create TokenConfig
-        token_data = config_data.get("token", {})
-        if token_data is None:
-            token_config = None
-        else:
-            if token_data.get("cookie_file_path") is not None:
+        token_data = config_data.get("token")
+        token_config = None
+        if token_data:
+            if _has_config_value(token_data.get("cookie_file_path")):
                 token_data_update = parse_netscape_cookies(
                     token_data["cookie_file_path"]
                 )
                 token_data.update(token_data_update)
 
-            token_config = TokenConfig(
-                bili_jct=token_data["bili_jct"],
-                buvid3=token_data["buvid3"],
-                buvid4=token_data.get("buvid4", ""),
-                dedeuserid=token_data["dedeuserid"],
-                sessdata=token_data["sessdata"],
-                ac_time_value=token_data.get("ac_time_value", ""),
+            required_token_fields = ("bili_jct", "buvid3", "dedeuserid", "sessdata")
+            has_any_token_field = any(
+                _has_config_value(token_data.get(field))
+                for field in required_token_fields
             )
 
+            if has_any_token_field:
+                missing_token_fields = [
+                    field
+                    for field in required_token_fields
+                    if not _has_config_value(token_data.get(field))
+                ]
+                if missing_token_fields:
+                    raise ValueError(
+                        "Token config is incomplete. Missing: "
+                        + ", ".join(missing_token_fields)
+                    )
+
+                token_config = TokenConfig(
+                    bili_jct=token_data["bili_jct"],
+                    buvid3=token_data["buvid3"],
+                    buvid4=token_data.get("buvid4", ""),
+                    dedeuserid=token_data["dedeuserid"],
+                    sessdata=token_data["sessdata"],
+                    ac_time_value=token_data.get("ac_time_value", ""),
+                )
+
         # Parse and create login_config
-        login_data = config_data.get("login", {})
+        login_data = config_data.get("login", {}) or {}
         login_config = LoginConfig(
-            username=login_data.get("username"),
-            password=login_data.get("password"),
-            phone_number=login_data.get("phone_number"),
-            country_code=login_data.get("country_code", "+86"),
+            method=_optional_str(login_data.get("method")),
+            username=_optional_str(login_data.get("username")),
+            password=_optional_str(login_data.get("password")),
+            phone_number=_optional_str(login_data.get("phone_number")),
+            country_code=_optional_str(login_data.get("country_code")) or "+86",
+            geetest_bind_address=str(
+                login_data.get("geetest_bind_address", "0.0.0.0")
+            ),
+            geetest_login_port=login_data.get("geetest_login_port", 41942),
+            geetest_verify_port=login_data.get("geetest_verify_port", 41943),
+            geetest_login_url=_optional_str(login_data.get("geetest_login_url")),
+            geetest_verify_url=_optional_str(login_data.get("geetest_verify_url")),
+            qrcode_bind_address=str(login_data.get("qrcode_bind_address", "0.0.0.0")),
+            qrcode_port=login_data.get("qrcode_port", 41944),
+            qrcode_url=_optional_str(login_data.get("qrcode_url")),
         )
 
         # Parse and create FeedConfig for each feed

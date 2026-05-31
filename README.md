@@ -50,12 +50,21 @@ English / [简体中文](./README_CN.md)
    pip install .
    ```
 
-4. **Obtain your Bilibili cookies:**
-   - Follow the instructions in the [bilibili-api documentation](https://nemo2011.github.io/bilibili-api/#/get-credential).
+4. **Obtain your Bilibili cookies or configure login:**
+   - Follow the instructions in the [bilibili-api documentation](https://nemo2011.github.io/bilibili-api/#/get-credential), or set `login.method` to `password`, `sms`, or `qrcode` in `config.yaml`.
+   - For Docker login, publish or reverse proxy ports `41942` (Geetest login), `41943` (Geetest verification), and `41944` (QR code login).
 
 5. **Configure `config.yaml`:**
    - Provide your Bilibili cookies.
    - Customize feed settings (output format, quality, filters, etc.).
+   - String values can reference environment variables with `$env{VAR_NAME}`:
+
+     ```yaml
+     login:
+       method: password
+       username: $env{BILIPOD_USERNAME}
+       password: $env{BILIPOD_PASSWORD}
+     ```
 
 6. **Create your podcast feed:**
    ```bash
@@ -86,6 +95,9 @@ English / [简体中文](./README_CN.md)
        -v $(pwd)/config.yaml:/app/config.yaml \
        -v $(pwd)/data:/app/data \
        -p 5728:5728 \
+       -p 41942:41942 \
+       -p 41943:41943 \
+       -p 41944:41944 \
        sunrisewestern/bilipod:latest
    ```
 
@@ -105,6 +117,9 @@ services:
       - ./data:/app/data
     ports:
       - "5728:5728"
+      - "41942:41942"
+      - "41943:41943"
+      - "41944:41944"
 ```
 
 1. **Run with Docker Compose**:
@@ -122,6 +137,23 @@ services:
    ```bash
    docker-compose down
    ```
+
+### Reverse Proxy Login Helpers
+
+If you expose Bilipod through path-based Nginx routes, set the public login helper URLs explicitly:
+
+```yaml
+login:
+  geetest_login_url: https://example.com/login
+  geetest_verify_url: https://example.com/verify
+  qrcode_url: https://example.com/qrcode
+```
+
+After Geetest completes and Bilibili sends an SMS code, open the same `/login/` or `/verify/` URL again to submit the SMS code from the browser.
+The hosted Bilipod page also polls `/auth/status` and shows a clickable login notification while authentication is waiting for action.
+If the hosted page is public, protect `/auth/status`, `/login/`, `/verify/`, and `/qrcode/` with Basic Auth or an IP allowlist at Nginx.
+
+An Nginx example is available at `docs/nginx_bilipod_example.conf`.
 
 
 ## Documentation

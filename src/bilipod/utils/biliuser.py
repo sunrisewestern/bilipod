@@ -174,12 +174,14 @@ async def get_series_info(
 def get_episode_list(pod: Pod) -> List[Episode]:
     return [
         Episode(
-            **episodes_info,
-            format=pod.format,
-            quality=pod.quality,
-            data_dir=pod.data_dir,
-            base_url=pod.base_url,
-            endorse=pod.endorse,
+            **{
+                **episodes_info,
+                "format": pod.format,
+                "quality": pod.quality,
+                "data_dir": pod.data_dir,
+                "base_url": pod.base_url,
+                "endorse": pod.endorse,
+            }
         )
         for episodes_info in pod.episodes
     ]

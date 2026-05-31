@@ -1,12 +1,15 @@
 import http.server
+import json
 import mimetypes
 import socketserver
 import ssl
 from pathlib import Path
 from socketserver import ThreadingMixIn
+from urllib.parse import urlparse
 
 import jinja2
 
+from ..utils.auth_status import get_auth_status
 from ..utils.bp_log import Logger
 
 logger = Logger().get_logger()
@@ -31,7 +34,8 @@ def run_web_server(server_config, data_dir: Path):
             super().__init__(*args, directory=str(data_dir), **kwargs)
 
         def do_GET(self):
-            if self.path == "/" or self.path == "/index.html":
+            request_path = urlparse(self.path).path
+            if request_path == "/" or request_path == "/index.html":
                 try:
                     template = jinja_env.get_template("index.html")
                     # Construct the base URL based on configuration
@@ -49,7 +53,15 @@ def run_web_server(server_config, data_dir: Path):
                 except Exception as e:
                     logger.error(f"Error serving index.html: {e}")
                     self.send_error(500, "Error serving index.html")
-            elif self.path == "podcast.opml":
+            elif request_path == "/auth/status":
+                body = json.dumps(get_auth_status()).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            elif request_path == "/podcast.opml":
                 opml_path = data_dir / "podcast.opml"
                 logger.info(f"Serving OPML file: {opml_path}")
                 if opml_path.is_file():
@@ -66,9 +78,9 @@ def run_web_server(server_config, data_dir: Path):
                         self.send_error(500, "Error serving opml.xml")
                 else:
                     self.send_error(404, "podcast.opml not found")
-            elif self.path.endswith(".xml"):
+            elif request_path.endswith(".xml"):
                 # Serve other XML files directly from the data directory
-                xml_file_name = self.path.lstrip("/")
+                xml_file_name = request_path.lstrip("/")
                 xml_path = Path(data_dir) / xml_file_name
                 if xml_path.is_file():
                     try:
@@ -85,11 +97,11 @@ def run_web_server(server_config, data_dir: Path):
                 else:
                     logger.warning(f"XML file not found: {xml_path}")
                     self.send_error(404, f"{xml_file_name} not found")
-            elif self.path.startswith("/static"):
+            elif request_path.startswith("/static"):
                 static_file_path = (
                     Path(__file__).parent.parent.resolve()
                     / "web"
-                    / self.path.lstrip("/")
+                    / request_path.lstrip("/")
                 )
                 if static_file_path.is_file():
                     self.send_response(200)

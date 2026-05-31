@@ -60,7 +60,10 @@ class TestGenerateFeedXML(unittest.TestCase):
         generate_feed_xml(self.pod, self.episode_tbl)
 
         # Check if rss_file was called correctly
-        FeedGenerator.rss_file.assert_called_with("/path/to/data/test.xml")
+        FeedGenerator.rss_file.assert_called_with(
+            filename="/path/to/data/test.xml",
+            pretty=True,
+        )
 
         # Check if the correct number of episodes were processed
         self.assertEqual(len(self.episode_data), 1)

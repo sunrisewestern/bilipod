@@ -53,7 +53,20 @@ async def run_service(config: BiliPodConfig, db_path: str):
 
     logger = Logger().get_logger()
 
-    # lode and check credential
+    data_dir = Path(config.storage.data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    web_server_thread = threading.Thread(
+        target=run_web_server,
+        args=(
+            config.server,
+            data_dir,
+        ),
+        daemon=True,
+    )
+    web_server_thread.start()
+
+    # load and check credential
     credential = await get_credential(config=config)
 
     logger.info(BANNER)
@@ -73,20 +86,9 @@ async def run_service(config: BiliPodConfig, db_path: str):
     episode_tbl = db.table("episode")
 
     # media dir init
-    media_dir = Path(config.storage.data_dir) / "media"
+    media_dir = data_dir / "media"
     if not media_dir.exists():
         media_dir.mkdir(parents=True, exist_ok=True)
-
-    # web server
-    web_server_thread = threading.Thread(
-        target=run_web_server,
-        args=(
-            config.server,
-            config.storage.data_dir,
-        ),
-        daemon=True,
-    )
-    web_server_thread.start()
 
     # initialize pod and episodes
     await data_initialize(
