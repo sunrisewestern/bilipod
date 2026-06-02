@@ -14,6 +14,7 @@ from ..bp_class import Episode, Pod
 from ..utils.biliuser import get_episode_list
 from ..utils.bp_log import Logger
 from ..utils.db_query import query_episode
+from ..utils.url import sanitize_url
 
 logger = Logger().get_logger()
 
@@ -30,7 +31,7 @@ def normalize_image_url(url):
     if not isinstance(url, str):
         return ""
 
-    image_url = url.strip()
+    image_url = sanitize_url(url)
     if image_url.startswith("//"):
         return f"https:{image_url}"
     if image_url.lower().startswith("http://"):
@@ -107,7 +108,7 @@ def generate_feed_xml(
         fe.guid(sanitize_for_xml(episode.bvid), permalink=False)
         fe.pubDate(pubdate)
         fe.enclosure(
-            url=sanitize_for_xml(episode.url),
+            url=sanitize_for_xml(sanitize_url(episode.url)),
             length=episode.size,
             type=sanitize_for_xml(episode.type),
         )

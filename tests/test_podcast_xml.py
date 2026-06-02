@@ -25,6 +25,9 @@ def test_normalize_image_url_uses_https():
     assert normalize_image_url("https://example.com/image.jpg") == (
         "https://example.com/image.jpg"
     )
+    assert normalize_image_url("https://example.com//image.jpg") == (
+        "https://example.com/image.jpg"
+    )
 
 
 class TestGenerateFeedXML(unittest.TestCase):

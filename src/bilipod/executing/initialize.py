@@ -12,6 +12,7 @@ from ..utils.biliuser import get_episode_list, get_pod_info
 from ..utils.bp_log import Logger
 from ..utils.config_parser import BiliPodConfig, FeedConfig, ServerConfig
 from ..utils.db_query import query_episode
+from ..utils.url import join_url, sanitize_url
 from .clean import clean_unused_episodes, clean_unused_rss
 
 logger = Logger().get_logger()
@@ -19,11 +20,11 @@ logger = Logger().get_logger()
 
 def build_base_url(server_config: ServerConfig) -> str:
     if server_config.hostname is None:
-        return (
+        return sanitize_url(
             f"{'https' if server_config.tls else 'http'}://"
             f"{server_config.bind_address}:{server_config.port}"
         )
-    return f"{server_config.hostname}/{server_config.path}"
+    return join_url(server_config.hostname, server_config.path)
 
 
 async def initialize_feed_pod(

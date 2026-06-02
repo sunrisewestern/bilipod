@@ -11,12 +11,29 @@ import jinja2
 
 from ..utils.auth_status import get_auth_status
 from ..utils.bp_log import Logger
+from ..utils.url import join_url, sanitize_url
 
 logger = Logger().get_logger()
 
 
 class ThreadedHTTPServer(ThreadingMixIn, socketserver.TCPServer):
     """Handle requests in a separate thread."""
+
+
+def _build_base_url(server_config, server_address=None) -> str:
+    if server_config.hostname is not None:
+        return join_url(server_config.hostname, server_config.path)
+
+    if server_address is None:
+        bind_address = server_config.bind_address
+        port = server_config.port
+        scheme = "https" if server_config.tls else "http"
+    else:
+        bind_address, port = server_address
+        scheme = "https" if server_config.tls else "http"
+
+    host = "localhost" if bind_address == "0.0.0.0" else bind_address
+    return sanitize_url(f"{scheme}://{host}:{port}")
 
 
 def run_web_server(server_config, data_dir: Path):
@@ -38,11 +55,7 @@ def run_web_server(server_config, data_dir: Path):
             if request_path == "/" or request_path == "/index.html":
                 try:
                     template = jinja_env.get_template("index.html")
-                    # Construct the base URL based on configuration
-                    if server_config.hostname is not None:
-                        base_url = f"{server_config.hostname}/{server_config.path}"
-                    else:
-                        base_url = f"{'https' if server_config.tls else 'http'}://{server_config.bind_address}:{server_config.port}"
+                    base_url = _build_base_url(server_config)
 
                     output = template.render(base_url=base_url)
 
@@ -137,11 +150,7 @@ def run_web_server(server_config, data_dir: Path):
     else:
         httpd = ThreadedHTTPServer(server_address, Handler)
 
-    # Construct the base URL based on configuration
-    if server_config.hostname is not None:
-        base_url = f"{server_config.hostname}/{server_config.path}"
-    else:
-        base_url = f"{'https' if server_address[0] == '0.0.0.0' else 'http'}://{server_address[0] if server_address[0] != '0.0.0.0' else 'localhost'}:{server_address[1]}"
+    base_url = _build_base_url(server_config, server_address)
 
     logger.info(f"Web server running at: {base_url}")
     httpd.serve_forever()

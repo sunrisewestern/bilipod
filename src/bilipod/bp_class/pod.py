@@ -2,6 +2,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
 
+from ..utils.url import join_url
+
 
 @dataclass
 class Pod:
@@ -94,7 +96,7 @@ class Pod:
 
     def _build_xml_url(self) -> str:
         feed_name = self.feed_id.replace("feed.", "", 1)
-        return f"{self.base_url.rstrip('/')}/{feed_name}.xml"
+        return join_url(self.base_url, f"{feed_name}.xml")
 
     def to_dict(self) -> dict:
         data = asdict(self)

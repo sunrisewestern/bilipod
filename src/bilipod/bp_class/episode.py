@@ -2,6 +2,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
 
+from ..utils.url import join_url, sanitize_url
+
 
 @dataclass
 class Episode:
@@ -64,6 +66,7 @@ class Episode:
             if isinstance(value, str) and "Path" in str(field_type):
                 value = Path(value)
             setattr(obj, field_name, value)
+        obj.url = sanitize_url(obj.url)
         return obj
 
     def __post_init__(self):
@@ -88,7 +91,7 @@ class Episode:
     def _set_url(self):
         suffix = "mp3" if self.format == "audio" else "mp4"
         quility = self.video_quality if self.format == "video" else self.audio_quality
-        self.url = f"{self.base_url}/media/{self.bvid}_{quility}.{suffix}"
+        self.url = join_url(self.base_url, "media", f"{self.bvid}_{quility}.{suffix}")
 
     def _set_quality(self):
         self.video_quality = {"low": "360P", "medium": "720P", "high": "4K"}[

@@ -1,6 +1,6 @@
 [project]
 name = "bilipod"
-version = "1.0.0"
+version = "1.0.1"
 description = "Make bilibili user or playlist into podcast"
 readme = "README.md"
 requires-python = ">=3.8"
