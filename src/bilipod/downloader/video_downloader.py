@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections.abc import MutableMapping, Sequence
 from pathlib import Path
-from typing import List, Literal, Union
+from typing import List, Literal, Tuple, Union
 
 import aiohttp
 from bilibili_api import (
@@ -24,6 +24,16 @@ select_client("aiohttp")
 logger = Logger().get_logger()
 
 
+def codec_aliases(codec) -> Tuple[str, ...]:
+    """Return codec enum values as strings across bilibili-api versions."""
+    value = codec.value
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, (tuple, list, set)):
+        return tuple(alias for alias in value if isinstance(alias, str))
+    return ()
+
+
 def normalize_video_codecs(v_url_data: MutableMapping) -> None:
     dash = v_url_data.get("dash")
     if not isinstance(dash, MutableMapping):
@@ -38,12 +48,13 @@ def normalize_video_codecs(v_url_data: MutableMapping) -> None:
             continue
 
         codec_name = codecs.split(".", 1)[0].lower()
-        if (
-            codec_name in {"hvc1", "hev1"}
-            and video.VideoCodecs.HEV.value not in codecs
+        hevc_aliases = codec_aliases(video.VideoCodecs.HEV)
+        if codec_name in {"hvc1", "hev1"} and not any(
+            alias in codecs for alias in hevc_aliases
         ):
             # bilibili_api matches HEVC by "hev", but Bilibili may return hvc1/hev1.
-            stream["codecs"] = f"{video.VideoCodecs.HEV.value}.{codecs}"
+            if hevc_aliases:
+                stream["codecs"] = f"{hevc_aliases[0]}.{codecs}"
 
 
 def dedupe_urls(urls: Sequence) -> List[str]:

@@ -19,6 +19,26 @@ logger = Logger().get_logger()
 MAX_DELAY = 5 * 60
 episode_tbl_lock = threading.Lock()
 update_event = asyncio.Event()
+update_event_loop = None
+update_event_loop_lock = threading.Lock()
+
+
+def bind_update_event_loop(loop=None) -> None:
+    global update_event_loop
+    if loop is None:
+        loop = asyncio.get_running_loop()
+    with update_event_loop_lock:
+        update_event_loop = loop
+
+
+def notify_update_event() -> None:
+    with update_event_loop_lock:
+        loop = update_event_loop
+
+    if loop and loop.is_running():
+        loop.call_soon_threadsafe(update_event.set)
+    else:
+        update_event.set()
 
 
 async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> None:
@@ -50,7 +70,7 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> 
         Query().feed_id == pod.feed_id,
     )
 
-    update_event.set()
+    notify_update_event()
 
     logger.info(f"Pod {pod.feed_id} updated")
 
@@ -58,51 +78,61 @@ async def update_pod(pod: Pod, pod_tbl: table.Table, credential: Credential) -> 
 async def update_episodes(
     pod_tbl: table.Table, episode_tbl: table.Table, credential: Credential
 ) -> None:
+    bind_update_event_loop()
+
     while True:
-        logger.debug("Waiting for update signal...")
-        await update_event.wait()
-        logger.debug("Update signal received.")
+        try:
+            logger.debug("Waiting for update signal...")
+            await update_event.wait()
+            logger.debug("Update signal received.")
 
-        await asyncio.sleep(MAX_DELAY)
+            await asyncio.sleep(MAX_DELAY)
 
-        update_event.clear()
-        logger.debug("Event cleared, fetching updated podcasts.")
+            update_event.clear()
+            logger.debug("Event cleared, fetching updated podcasts.")
 
-        # Fetch updated pods from pod_tbl
-        updated_pods = [
-            Pod.from_dict(pod_info)
-            for pod_info in pod_tbl.search(
-                Query().update_at >= (time.time() - (MAX_DELAY + 10))
-            )
-        ]
+            # Fetch updated pods from pod_tbl
+            updated_pods = [
+                Pod.from_dict(pod_info)
+                for pod_info in pod_tbl.search(
+                    Query().update_at >= (time.time() - (MAX_DELAY + 10))
+                )
+            ]
 
-        if not updated_pods:
-            logger.debug("No feed to update.")
-            continue
+            if not updated_pods:
+                logger.debug("No feed to update.")
+                continue
 
-        # gather the episode list to download
-        episode_to_update: List[Episode] = []
-        for pod in updated_pods:
-            episode_list: List[Episode] = get_episode_list(pod)
-            for episode in episode_list:
-                if not episode_tbl.search(query_episode(episode)):
-                    episode_to_update.append(episode)
-
-        if episode_to_update:
-            episode_to_update = list(set(episode_to_update))
-            logger.debug(f"Episodes to update: {episode_to_update}")
-            await download_episodes(episode_to_update, credential=credential, max_attempts=10)
-
-            # update episode list in episode_tbl
-            episode_tbl.insert_multiple(
-                [episode.to_dict() for episode in episode_to_update]
-            )
-
-            # update feed xml
+            # gather the episode list to download
+            episode_to_update: List[Episode] = []
             for pod in updated_pods:
-                generate_feed_xml(pod=pod, episode_tbl=episode_tbl)
-                logger.info(f"Feed {pod.feed_id} updated.")
+                episode_list: List[Episode] = get_episode_list(pod)
+                for episode in episode_list:
+                    if not episode_tbl.search(query_episode(episode)):
+                        episode_to_update.append(episode)
 
-            clean_untracked_episodes(pod_tbl, episode_tbl)
-        else:
-            logger.info("No episodes to update.")
+            if episode_to_update:
+                episode_to_update = list(set(episode_to_update))
+                logger.debug(f"Episodes to update: {episode_to_update}")
+                await download_episodes(
+                    episode_to_update, credential=credential, max_attempts=10
+                )
+
+                # update episode list in episode_tbl
+                episode_tbl.insert_multiple(
+                    [episode.to_dict() for episode in episode_to_update]
+                )
+
+                # update feed xml
+                for pod in updated_pods:
+                    generate_feed_xml(pod=pod, episode_tbl=episode_tbl)
+                    logger.info(f"Feed {pod.feed_id} updated.")
+
+                clean_untracked_episodes(pod_tbl, episode_tbl)
+            else:
+                logger.info("No episodes to update.")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            update_event.clear()
+            logger.exception("Failed to update episodes; waiting for the next update.")

@@ -9,6 +9,17 @@ from ..utils.bp_log import Logger
 
 logger = Logger().get_logger()
 schedule_lock = threading.RLock()
+service_event_loop = None
+service_event_loop_lock = threading.Lock()
+
+
+def bind_service_event_loop(loop=None) -> None:
+    """Bind scheduled coroutines to the service's main event loop."""
+    global service_event_loop
+    if loop is None:
+        loop = asyncio.get_running_loop()
+    with service_event_loop_lock:
+        service_event_loop = loop
 
 
 def feed_job_tag(feed_id: str) -> str:
@@ -107,8 +118,20 @@ def schedule_job(update_interval, job=None, *args, tags=None, **kwargs):
 
 def run_async(job, *args, **kwargs):
     """
-    Wrapper function to run an async job in a separate event loop.
+    Run an async job on the service event loop.
+
+    TinyDB performs read-modify-write operations without cross-thread locking.
+    Keeping scheduled jobs on the main loop prevents the scheduler thread from
+    modifying the database concurrently with the feed update task.
     """
+    with service_event_loop_lock:
+        loop = service_event_loop
+
+    if loop and loop.is_running():
+        future = asyncio.run_coroutine_threadsafe(job(*args, **kwargs), loop)
+        return future.result()
+
+    # Retain a fallback for standalone use before the service loop is bound.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:

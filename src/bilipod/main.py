@@ -18,7 +18,7 @@ from .executing import (
     update_episodes,
     watch_feed_config_changes,
 )
-from .executing.scheduler import run_pending
+from .executing.scheduler import bind_service_event_loop, run_pending
 from .utils.bp_log import Logger
 from .utils.config_parser import BiliPodConfig
 from .utils.login import get_credential, update_credential
@@ -51,6 +51,7 @@ def run_scheduler():
 async def run_service(config: BiliPodConfig, db_path: str, config_path: str):
 
     request_settings.set("impersonate", "chrome131")
+    bind_service_event_loop()
 
     logger = Logger().get_logger()
 

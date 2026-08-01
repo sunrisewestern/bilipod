@@ -408,7 +408,10 @@ async def password_login(
 
 async def qrcode_login(login_config: Optional[LoginConfig] = None) -> Credential:
     login_config = login_config or LoginConfig()
-    qr_login = login_v2.QrCodeLogin()
+    # The web QR endpoint may report DONE without returning SESSDATA. The TV
+    # endpoint returns cookies as structured data and is supported by the
+    # fork's QrCodeLogin cookie-name normalization.
+    qr_login = login_v2.QrCodeLogin(platform=login_v2.QrCodeLoginChannel.TV)
     await qr_login.generate_qrcode()
 
     status = {"message": "Scan this QR code with the Bilibili app."}
